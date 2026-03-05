@@ -280,7 +280,7 @@ export default function PanelAdministrativo() {
     return (
       <main className="min-h-screen bg-[#F3F5F9] flex items-center justify-center px-6">
         <div className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center border border-slate-100">
-          <div className="w-20 h-20 bg-[#702032] rounded-full mx-auto mb-6 flex items-center justify-center"><img src="/logo-imju.png" alt="IMJU" className="w-12 h-12 object-contain filter brightness-0 invert" /></div>
+          <div className="w-20 h-20 bg-[#702032] rounded-full mx-auto mb-6 flex items-center justify-center"><img src="/imju-oficial.png" alt="IMJU" className="w-12 h-12 object-contain filter brightness-0 invert" /></div>
           <h1 className="text-2xl font-black text-slate-900 mb-2">Panel Central</h1>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-8">Administración IMJU</p>
           <form onSubmit={verificarPin}>
@@ -298,7 +298,7 @@ export default function PanelAdministrativo() {
       <div className="bg-[#702032] pt-8 pb-20 px-8 rounded-b-[4rem] shadow-2xl relative overflow-hidden">
         <div className="max-w-5xl mx-auto flex justify-between items-center relative z-10">
           <div className="flex items-center gap-4">
-            <div className="bg-white p-2.5 rounded-2xl shadow-lg"><img src="/logo-imju.png" alt="IMJU" className="w-12 h-12 object-contain" /></div>
+            <div className="bg-white p-2.5 rounded-2xl shadow-lg"><img src="/imju-oficial.png" alt="IMJU" className="w-12 h-12 object-contain" /></div>
             <div><p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Ayuntamiento de Escuinapa</p><h1 className="text-2xl md:text-3xl font-black text-white">Centro de Control</h1></div>
           </div>
           <button onClick={() => { setAccesoConcedido(false); window.location.href = "/"; }} className="bg-white/10 hover:bg-red-500/80 px-5 py-2.5 rounded-full text-white text-[10px] font-black uppercase border border-white/10 hidden md:block">Cerrar Sesión</button>

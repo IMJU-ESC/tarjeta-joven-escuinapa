@@ -126,7 +126,7 @@ export default function TarjetaDigital() {
       <div className="pt-10 pb-6 px-6 max-w-md mx-auto flex justify-between items-center animate-fade-in">
         <div className="flex items-center gap-4">
           <div className="bg-white p-2 rounded-2xl shadow-lg border border-slate-100">
-             <img src="/logo-imju.png" alt="IMJU" className="w-10 h-10 object-contain" />
+             <img src="/imju-oficial.png" alt="IMJU" className="w-10 h-10 object-contain" />
           </div>
           <div>
             <p className={`text-[11px] font-black uppercase tracking-widest mb-1 ${modoOscuro ? "text-violet-400" : "text-slate-400"}`}>Escuinapa</p>

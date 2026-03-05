@@ -51,11 +51,11 @@ export default function Inicio() {
           {/* Logo Principal (IMJU) - Más grande y central */}
           <div className="bg-white p-4 rounded-full shadow-2xl border border-slate-100 flex items-center justify-center transform hover:scale-105 transition-transform duration-300">
             {/* INSTRUCCIÓN PARA FERNANDO:
-                1. Guarda tu logo en la carpeta 'public' (ej. public/logo-imju.png)
-                2. Cambia el 'src' de abajo por '/logo-imju.png'
+                1. Guarda tu logo en la carpeta 'public' (ej. public/imju-oficial.png)
+                2. Cambia el 'src' de abajo por '/imju-oficial.png'
             */}
             <img 
-              src="/logo-imju.png" //<-- CAMBIA ESTO
+              src="/imju-oficial.png" //<-- CAMBIA ESTO
               alt="Logo IMJU Escuinapa" 
               className="w-28 h-28 object-contain"
             />
