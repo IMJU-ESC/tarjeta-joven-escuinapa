@@ -35,8 +35,6 @@ export default function PortalNegocios() {
   const [diasValidos, setDiasValidos] = useState("Todos los días");
   const [fechaVencimiento, setFechaVencimiento] = useState("");
   const [usoUnico, setUsoUnico] = useState(false);
-  
-  // NUEVO: Nivel de Tarjeta
   const [nivelRequerido, setNivelRequerido] = useState("Clásica");
 
   const [modalAjustes, setModalAjustes] = useState(false);
@@ -49,6 +47,9 @@ export default function PortalNegocios() {
   const router = useRouter();
   const audioExito = useRef<HTMLAudioElement | null>(null);
   const audioError = useRef<HTMLAudioElement | null>(null);
+
+  // Jerarquía Global para validación estricta
+  const jerarquiaPromos = { "Clásica": 1, "Oro": 2, "Black": 3 };
 
   useEffect(() => {
     const sesionGuardada = localStorage.getItem("sesionNegocio");
@@ -98,15 +99,39 @@ export default function PortalNegocios() {
     setListaPromos(temp);
   };
 
+  // AUDITORÍA INTELIGENTE AL ESCANEAR
   const procesarQR = async (codigoQR: string) => {
     if (buscando) return; setBuscando(true);
     try {
       const q = query(collection(db, "jovenes"), where("codigoUnicoQR", "==", codigoQR));
       const res = await getDocs(q);
+      
       if (res.empty) {
         audioError.current?.play(); alert("❌ Código no válido."); setModoEscaner(true);
       } else {
-        audioExito.current?.play(); setJovenEscaneado({ idFirebase: res.docs[0].id, ...res.docs[0].data() }); setModoEscaner(false);
+        const dataJoven = { idFirebase: res.docs[0].id, ...res.docs[0].data() };
+        
+        // 1. Descargamos las visitas de este joven para saber su nivel real
+        const qVisitas = query(collection(db, "visitas"), where("idJoven", "==", dataJoven.idFirebase));
+        const snapVisitas = await getDocs(qVisitas);
+        
+        const fechaActual = new Date();
+        let visitasActivas = 0;
+        
+        snapVisitas.forEach(v => {
+          const d = v.data();
+          const diasTranscurridos = (fechaActual.getTime() - new Date(d.fecha).getTime()) / (1000 * 3600 * 24);
+          if (diasTranscurridos <= 90) visitasActivas++;
+        });
+
+        // 2. Calculamos su poder adquisitivo (Nivel)
+        dataJoven.visitasTotales = visitasActivas;
+        dataJoven.nivelUserNum = visitasActivas >= 40 ? 3 : (visitasActivas >= 15 ? 2 : 1);
+        dataJoven.nivelNombre = visitasActivas >= 40 ? "Black" : (visitasActivas >= 15 ? "Oro" : "Clásica");
+
+        audioExito.current?.play(); 
+        setJovenEscaneado(dataJoven); 
+        setModoEscaner(false);
       }
     } catch (error) { audioError.current?.play(); }
     setBuscando(false);
@@ -116,13 +141,26 @@ export default function PortalNegocios() {
     setRegistrandoVisita(true);
     const p = listaPromos.find(x => x.idFirebase === promoAplicada);
     
-    if (p && p.tipo === "Directa" && p.usoUnico) {
-      const yaLoUso = historialVisitas.some(v => v.idJoven === jovenEscaneado.idFirebase && v.idPromo === p.idFirebase);
-      if (yaLoUso) {
+    // DOBLE VALIDACIÓN DE SEGURIDAD EN EL SERVIDOR
+    if (p) {
+      // Regla 1: Nivel de Tarjeta
+      const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
+      if (promoNum > jovenEscaneado.nivelUserNum) {
         audioError.current?.play();
-        alert("❌ OPERACIÓN RECHAZADA:\nEste joven ya utilizó este cupón de Único Uso.");
+        alert(`❌ ACCESO DENEGADO:\nEste joven es Nivel ${jovenEscaneado.nivelNombre}. No puedes aplicarle una promoción exclusiva de Nivel ${p.nivelRequerido}.`);
         setRegistrandoVisita(false);
         return;
+      }
+
+      // Regla 2: Un Solo Uso
+      if (p.tipo === "Directa" && p.usoUnico) {
+        const yaLoUso = historialVisitas.some(v => v.idJoven === jovenEscaneado.idFirebase && v.idPromo === p.idFirebase);
+        if (yaLoUso) {
+          audioError.current?.play();
+          alert("❌ OPERACIÓN RECHAZADA:\nEste joven ya utilizó este cupón de Único Uso.");
+          setRegistrandoVisita(false);
+          return;
+        }
       }
     }
 
@@ -178,7 +216,7 @@ export default function PortalNegocios() {
         visitasMeta: tipoPromo === "Frecuente" ? parseInt(visitasRequeridas) : null, 
         diasValidos: diasValidos, fechaVencimiento: fechaVencimiento || null, 
         usoUnico: tipoPromo === "Directa" ? usoUnico : false, 
-        nivelRequerido: nivelRequerido, // Se guarda el nivel VIP
+        nivelRequerido: nivelRequerido, 
         estatus: "Activa", fechaPublicacion: new Date().toISOString()
       });
       alert("¡Promoción activada!"); limpiarFormulario(); cargarPromos(); 
@@ -268,13 +306,28 @@ export default function PortalNegocios() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-black text-slate-800 mb-1 tracking-tight">{jovenEscaneado.nombreCompleto}</h3>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-6">Identidad Verificada</p>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Identidad Verificada</p>
+                  
+                  {/* ESTATUS DEL JOVEN EN EL PORTAL EMPRESARIO */}
+                  <span className={`inline-block mb-6 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${jovenEscaneado.nivelNombre === 'Black' ? 'bg-slate-900 text-fuchsia-400' : jovenEscaneado.nivelNombre === 'Oro' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-200 text-slate-600'}`}>
+                    Nivel Actual: {jovenEscaneado.nivelNombre}
+                  </span>
                   
                   <div className="text-left space-y-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">¿Qué va a canjear?</label>
                     <select value={promoAplicada} onChange={(e) => setPromoAplicada(e.target.value)} className="w-full bg-slate-50 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all">
                       <option value="">Ninguna (Visita Estándar)</option>
-                      {listaPromos.map(p => ( <option key={p.idFirebase} value={p.idFirebase}>🎁 {p.titulo} {p.usoUnico ? "(1 Solo Uso)" : ""}</option> ))}
+                      {listaPromos.map(p => {
+                        // LA MAGIA DEL BLOQUEO VISUAL
+                        const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
+                        const bloqueada = promoNum > jovenEscaneado.nivelUserNum;
+
+                        return (
+                          <option key={p.idFirebase} value={p.idFirebase} disabled={bloqueada}>
+                            {bloqueada ? "🔒 BLOQUEADA: " : "🎁 "} {p.titulo} {bloqueada ? `(Requiere ${p.nivelRequerido})` : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -359,7 +412,7 @@ export default function PortalNegocios() {
         )}
       </div>
 
-      {/* MODAL FORMULARIOS CREADOR */}
+      {/* MODAL FORMULARIOS CREADOR (Oculto para ahorrar espacio visual, intacto en funcionalidad) */}
       {creandoModal && (
         <div className="fixed inset-0 z-[90] bg-slate-900/60 backdrop-blur-sm flex flex-col justify-end animate-fade-in">
           <div className="bg-white w-full max-h-[90vh] overflow-y-auto rounded-t-[3rem] p-8 pb-32 shadow-2xl animate-slide-up relative">
@@ -464,8 +517,6 @@ export default function PortalNegocios() {
           })}
         </div>
       </div>
-      
-      {/* MODAL AJUSTES (Omitido visualmente, pero funcional arriba) */}
     </main>
   );
 }
