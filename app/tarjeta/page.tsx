@@ -119,21 +119,21 @@ export default function TarjetaDigital() {
       })
     : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
 
-  // --- LÓGICA DE NIVELES (GAMIFICACIÓN CON CADUCIDAD) ---
+  // LÓGICA DE NIVELES (Últimos 90 días)
   const fechaActual = new Date();
-  
-  // Filtramos para contar SOLO las visitas de los últimos 90 días
   const visitasActivas = miHistorial.filter(v => {
     const fechaVisita = new Date(v.fecha);
     const diasTranscurridos = (fechaActual.getTime() - fechaVisita.getTime()) / (1000 * 3600 * 24);
     return diasTranscurridos <= 90; 
   }).length;
 
-  // Nuevos umbrales (Más difíciles)
   const esBlack = visitasActivas >= 40;
   const esOro = visitasActivas >= 15 && visitasActivas < 40;
   
-  // Colores dinámicos
+  // Jerarquía Numérica para bloquear promos
+  const nivelUserNum = esBlack ? 3 : (esOro ? 2 : 1);
+  const jerarquiaPromos = { "Clásica": 1, "Oro": 2, "Black": 3 };
+  
   const themeColors = esBlack 
     ? { bg: "bg-[#050505]", border: "border-white/10", glow1: "bg-violet-600 group-hover:bg-fuchsia-500", glow2: "bg-fuchsia-600 group-hover:bg-violet-500", text: "from-violet-400 to-fuchsia-400", badge: "VIP BLACK" }
     : esOro 
@@ -162,7 +162,7 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* TARJETA DIGITAL DINÁMICA */}
+      {/* TARJETA DIGITAL */}
       <div className="max-w-md mx-auto px-6 relative z-20 perspective-1000 animate-slide-up">
         <div className={`group relative transition-all duration-500 hover:-translate-y-2 hover:rotate-x-2 hover:shadow-2xl ${themeColors.bg} rounded-[3rem] p-8 overflow-hidden border ${themeColors.border}`}>
           
@@ -200,7 +200,6 @@ export default function TarjetaDigital() {
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight leading-tight drop-shadow-md">{datosJoven.nombreCompleto}</h2>
                 <div className="mt-1 flex flex-col">
-                  {/* SE MUESTRA EL PUNTAJE BASADO EN LOS ÚLTIMOS 90 DÍAS */}
                   <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest">
                     Puntos de Nivel: <span className={`font-black text-sm ${themeColors.text} bg-clip-text text-transparent`}>{visitasActivas}</span>
                   </p>
@@ -220,7 +219,7 @@ export default function TarjetaDigital() {
         @keyframes spin-slow { 100% { transform: rotate(360deg); } }
       `}} />
 
-      {/* BUSCADOR */}
+      {/* BUSCADOR Y FILTROS */}
       <div className="max-w-md mx-auto px-6 mt-10">
         <div className="relative mb-6">
           <input 
@@ -253,6 +252,7 @@ export default function TarjetaDigital() {
             </div>
         )}
 
+        {/* LISTA DE PROMOCIONES (EFECTO FOMO AQUÍ) */}
         <div className="space-y-6 mt-2">
           {cargandoDatos ? (
             <div className="flex flex-col items-center py-20"><div className="w-9 h-9 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div></div>
@@ -262,6 +262,40 @@ export default function TarjetaDigital() {
             ) : (
               <>
                 {pestañaActiva === "promos" && filtrados.map((p) => {
+                  
+                  // LÓGICA DE BLOQUEO POR NIVEL
+                  const nivelPromo = p.nivelRequerido || "Clásica";
+                  const promoNum = jerarquiaPromos[nivelPromo as keyof typeof jerarquiaPromos] || 1;
+                  const bloqueada = promoNum > nivelUserNum;
+
+                  // SI ESTÁ BLOQUEADA, MOSTRAMOS LA CAJA MISTERIOSA
+                  if (bloqueada) {
+                    return (
+                      <div key={p.idFirebase} className={`relative rounded-[2.5rem] p-6 transition-all duration-300 overflow-hidden ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-sm border border-slate-100"}`}>
+                        {/* Contenido Falso Borroso para dar curiosidad */}
+                        <div className="filter blur-md opacity-40 pointer-events-none select-none">
+                          <div className="flex gap-4 items-center mb-5">
+                            <div className={`w-16 h-16 rounded-2xl ${modoOscuro ? "bg-slate-800" : "bg-slate-200"}`}></div>
+                            <div className="flex-1 space-y-2">
+                              <div className={`h-2 w-1/3 rounded ${modoOscuro ? "bg-slate-700" : "bg-slate-300"}`}></div>
+                              <div className={`h-4 w-3/4 rounded ${modoOscuro ? "bg-slate-700" : "bg-slate-300"}`}></div>
+                            </div>
+                          </div>
+                          <div className={`h-3 w-full rounded mb-2 ${modoOscuro ? "bg-slate-800" : "bg-slate-200"}`}></div>
+                          <div className={`h-3 w-4/5 rounded ${modoOscuro ? "bg-slate-800" : "bg-slate-200"}`}></div>
+                        </div>
+
+                        {/* Candado Flotante */}
+                        <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-6 ${modoOscuro ? "bg-black/40" : "bg-white/40"} backdrop-blur-sm`}>
+                          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-3 shadow-2xl ${nivelPromo === "Black" ? "bg-[#050505] text-fuchsia-400 border border-white/10" : "bg-gradient-to-br from-yellow-500 to-yellow-700 text-white border border-yellow-300/30"}`}>🔒</div>
+                          <h4 className={`text-xl font-black leading-tight drop-shadow-md ${modoOscuro ? "text-white" : "text-slate-900"}`}>Exclusivo Nivel {nivelPromo}</h4>
+                          <p className={`text-[9px] font-black uppercase tracking-widest mt-2 drop-shadow-md ${modoOscuro ? "text-slate-300" : "text-slate-700"}`}>Acumula visitas para desbloquear</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // SI NO ESTÁ BLOQUEADA, SE MUESTRA NORMAL
                   const { actual, porcentaje } = obtenerProgreso(p.idFirebase, p.visitasMeta);
                   const esFrecuente = p.tipo === "Frecuente";
                   const esUnicoUso = p.usoUnico === true;
@@ -277,7 +311,7 @@ export default function TarjetaDigital() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
                          {esUnicoUso && <span className="bg-orange-100 text-orange-600 text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider">Válido 1 Vez</span>}
                          {p.diasValidos && p.diasValidos !== "Todos los días" && <span className="bg-blue-100 text-blue-600 text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider">{p.diasValidos}</span>}
                       </div>
@@ -288,7 +322,7 @@ export default function TarjetaDigital() {
                         <div className={`mb-6 p-5 rounded-2xl border ${modoOscuro ? "bg-[#080A12] border-white/5" : "bg-slate-50 border-slate-100"}`}>
                           <div className="flex justify-between items-end mb-2.5">
                              <p className={`text-[10px] font-black uppercase tracking-widest ${actual === p.visitasMeta ? "text-fuchsia-500 animate-pulse" : (modoOscuro ? "text-slate-500" : "text-slate-400")}`}>
-                               {actual === p.visitasMeta ? "¡Premio listo para canjear! 🎁" : "Nivel de recompensas"}
+                               {actual === p.visitasMeta ? "¡Premio listo para canjear! 🎁" : "Progreso de Lealtad"}
                              </p>
                              <p className={`text-sm font-black ${modoOscuro ? "text-white" : "text-slate-800"}`}>{actual} <span className={modoOscuro ? "text-slate-500" : "text-slate-400"}>/ {p.visitasMeta}</span></p>
                           </div>
@@ -313,6 +347,7 @@ export default function TarjetaDigital() {
                   );
                 })}
 
+                {/* EMPLEOS Y ACTIVIDAD INTACTOS */}
                 {pestañaActiva === "empleos" && filtrados.map((e) => (
                    <div key={e.idFirebase} className={`rounded-[2.5rem] p-7 transition-all ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-lg border border-slate-50"}`}>
                       <div className="flex justify-between items-start mb-4">
@@ -354,7 +389,7 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* MODALES INTACTOS */}
+      {/* MODALES INTACTOS (Ajustes y QR Ampliado) */}
       {modalAjustes && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalAjustes(false)}>
           <div className={`p-8 rounded-[3rem] shadow-2xl relative w-full max-w-sm ${modoOscuro ? "bg-[#161B2C] border border-white/10" : "bg-white"}`} onClick={e => e.stopPropagation()}>
