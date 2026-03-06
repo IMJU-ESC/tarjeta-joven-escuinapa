@@ -18,9 +18,10 @@ export default function TarjetaDigital() {
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [modoOscuro, setModoOscuro] = useState(false);
-
-  // NUEVO: Estado para rastrear empleos contactados (memoria local)
   const [empleosContactados, setEmpleosContactados] = useState<string[]>([]);
+
+  // NUEVO: Estado para el modal de celebración
+  const [modalNivel, setModalNivel] = useState<{mostrar: boolean, nivelNuevo: string, visitas: number} | null>(null);
 
   const [modalAjustes, setModalAjustes] = useState(false);
   const [nuevaContrasena, setNuevaContrasena] = useState("");
@@ -34,11 +35,8 @@ export default function TarjetaDigital() {
       const joven = JSON.parse(sesionGuardada);
       setDatosJoven(joven);
       
-      // Cargamos de la memoria interna los empleos que YA contactó este joven
       const contactadosGuardados = localStorage.getItem(`empleos_${joven.idFirebase}`);
-      if(contactadosGuardados) {
-        setEmpleosContactados(JSON.parse(contactadosGuardados));
-      }
+      if(contactadosGuardados) setEmpleosContactados(JSON.parse(contactadosGuardados));
 
       cargarTodo(joven.idFirebase);
     } else {
@@ -71,6 +69,42 @@ export default function TarjetaDigital() {
     } catch (error) { console.error(error); }
     setCargandoDatos(false);
   };
+
+  // DETECTOR DE SUBIDA DE NIVEL
+  useEffect(() => {
+    if (miHistorial.length > 0 && datosJoven) {
+      const fechaActual = new Date();
+      const activas = miHistorial.filter(v => {
+        const dias = (fechaActual.getTime() - new Date(v.fecha).getTime()) / (1000 * 3600 * 24);
+        return dias <= 90; 
+      }).length;
+
+      let nivelCalculado = "Clásica";
+      let jerarquiaCalculada = 1;
+      
+      if (activas >= 40) { nivelCalculado = "VIP Black"; jerarquiaCalculada = 3; }
+      else if (activas >= 15) { nivelCalculado = "Nivel Oro"; jerarquiaCalculada = 2; }
+
+      const keyNivel = `nivel_guardado_${datosJoven.idFirebase}`;
+      const nivelAnterior = localStorage.getItem(keyNivel);
+      
+      if (!nivelAnterior) {
+        // Si es la primera vez que entra, solo guardamos el nivel sin festejar
+        localStorage.setItem(keyNivel, nivelCalculado);
+      } else {
+        const jerarquiaAnterior = nivelAnterior === "VIP Black" ? 3 : (nivelAnterior === "Nivel Oro" ? 2 : 1);
+        
+        // ¡Si la jerarquía nueva es mayor, HAY FIESTA!
+        if (jerarquiaCalculada > jerarquiaAnterior) {
+          setModalNivel({ mostrar: true, nivelNuevo: nivelCalculado, visitas: activas });
+          localStorage.setItem(keyNivel, nivelCalculado); // Actualizamos la memoria
+        } else if (jerarquiaCalculada < jerarquiaAnterior) {
+          // Si bajó de nivel por inactividad, lo bajamos silenciosamente
+          localStorage.setItem(keyNivel, nivelCalculado);
+        }
+      }
+    }
+  }, [miHistorial, datosJoven]);
 
   const obtenerProgreso = (idPromo: string, meta: number) => {
     const usos = miHistorial.filter(v => v.idPromo === idPromo).length;
@@ -116,14 +150,12 @@ export default function TarjetaDigital() {
     window.location.href = "/";
   };
 
-  // NUEVO: Función inteligente para contactar un empleo y guardarlo en memoria
   const abrirWhatsAppEmpleo = (empleo: any) => {
     if (!empleosContactados.includes(empleo.idFirebase)) {
       const nuevosGuardados = [...empleosContactados, empleo.idFirebase];
       setEmpleosContactados(nuevosGuardados);
       localStorage.setItem(`empleos_${datosJoven.idFirebase}`, JSON.stringify(nuevosGuardados));
     }
-    // Abrimos el chat de WhatsApp real
     window.open(`https://wa.me/52${empleo.telefonoContacto}`, '_blank');
   };
 
@@ -140,7 +172,7 @@ export default function TarjetaDigital() {
       })
     : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
 
-  // LÓGICA DE NIVELES (Últimos 90 días)
+  // LÓGICA DE NIVELES 
   const fechaActual = new Date();
   const visitasActivas = miHistorial.filter(v => {
     const fechaVisita = new Date(v.fecha);
@@ -219,8 +251,9 @@ export default function TarjetaDigital() {
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight leading-tight drop-shadow-md">{datosJoven.nombreCompleto}</h2>
                 <div className="mt-1 flex flex-col">
+                  {/* CORRECCIÓN DE LOS PUNTOS DE NIVEL (Colores sólidos) */}
                   <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest">
-                    Puntos de Nivel: <span className={`font-black text-sm ${themeColors.text} bg-clip-text text-transparent`}>{visitasActivas}</span>
+                    Puntos de Nivel: <span className={`font-black text-sm ml-1 ${esBlack ? 'text-fuchsia-400' : esOro ? 'text-yellow-400' : 'text-cyan-400'}`}>{visitasActivas}</span>
                   </p>
                   <p className="text-white/30 text-[7px] uppercase mt-0.5">Últimos 90 días</p>
                 </div>
@@ -361,11 +394,9 @@ export default function TarjetaDigital() {
                   );
                 })}
 
-                {/* EMPLEOS CON BOTÓN INTELIGENTE (Ya contactado) */}
+                {/* EMPLEOS Y ACTIVIDAD INTACTOS */}
                 {pestañaActiva === "empleos" && filtrados.map((e) => {
-                   
                    const yaContactado = empleosContactados.includes(e.idFirebase);
-
                    return (
                      <div key={e.idFirebase} className={`rounded-[2.5rem] p-7 transition-all ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-lg border border-slate-50"}`}>
                         <div className="flex justify-between items-start mb-4">
@@ -379,23 +410,13 @@ export default function TarjetaDigital() {
                         </a>
 
                         <p className={`font-black text-xl mt-1.5 mb-5 ${modoOscuro ? "text-emerald-400" : "text-emerald-600"}`}>{e.sueldo}</p>
-                        
-                        {/* Botón Inteligente WhatsApp */}
-                        <button 
-                          onClick={() => abrirWhatsAppEmpleo(e)} 
-                          className={`w-full font-black py-4.5 rounded-2xl text-[11px] uppercase tracking-widest transition-colors shadow-sm ${
-                            yaContactado 
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200" 
-                              : (modoOscuro ? "bg-[#080A12] hover:bg-black text-white" : "bg-slate-950 hover:bg-slate-800 text-white")
-                          }`}
-                        >
+                        <button onClick={() => abrirWhatsAppEmpleo(e)} className={`w-full font-black py-4.5 rounded-2xl text-[11px] uppercase tracking-widest transition-colors shadow-sm ${yaContactado ? "bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200" : (modoOscuro ? "bg-[#080A12] hover:bg-black text-white" : "bg-slate-950 hover:bg-slate-800 text-white")}`}>
                           {yaContactado ? "✅ Ya contactado (WhatsApp)" : "💬 WhatsApp"}
                         </button>
                      </div>
                    );
                 })}
 
-                {/* ACTIVIDAD */}
                 {pestañaActiva === "actividad" && (
                   <div className="space-y-4">
                     {miHistorial.length === 0 ? (
@@ -420,7 +441,38 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* MODALES INTACTOS */}
+      {/* MODAL FESTEJO DE SUBIDA DE NIVEL */}
+      {modalNivel && modalNivel.mostrar && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalNivel(null)}>
+          <div className={`p-8 rounded-[3rem] shadow-[0_0_60px_rgba(255,215,0,0.3)] relative w-full max-w-sm text-center transform transition-all animate-slide-up bg-gradient-to-b ${modalNivel.nivelNuevo === "VIP Black" ? "from-slate-900 to-black border-2 border-fuchsia-500/50" : "from-yellow-50 to-white border-2 border-yellow-400"}`} onClick={e => e.stopPropagation()}>
+            
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl animate-bounce">
+              {modalNivel.nivelNuevo === "VIP Black" ? "👑" : "⭐"}
+            </div>
+
+            <h2 className={`text-3xl font-black mt-6 mb-2 tracking-tighter ${modalNivel.nivelNuevo === "VIP Black" ? "text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400" : "text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-700"}`}>
+              ¡NUEVO ESTATUS!
+            </h2>
+            <p className={`text-sm font-bold mb-6 uppercase tracking-widest ${modalNivel.nivelNuevo === "VIP Black" ? "text-slate-400" : "text-slate-500"}`}>
+              Has alcanzado el {modalNivel.nivelNuevo}
+            </p>
+
+            <div className={`p-5 rounded-2xl mb-6 ${modalNivel.nivelNuevo === "VIP Black" ? "bg-white/5 border border-white/10" : "bg-yellow-100/50 border border-yellow-200"}`}>
+              <p className={`text-xs font-medium leading-relaxed ${modalNivel.nivelNuevo === "VIP Black" ? "text-slate-300" : "text-slate-600"}`}>
+                ¡Felicidades, {datosJoven.nombreCompleto.split(" ")[0]}! Con tus <span className="font-black text-lg">{modalNivel.visitas}</span> visitas acabas de evolucionar tu tarjeta. 
+                <br/><br/>
+                Ahora tienes acceso a <span className="font-black">beneficios exclusivos</span> que están bloqueados para otros usuarios.
+              </p>
+            </div>
+
+            <button onClick={() => setModalNivel(null)} className={`w-full font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest transition-all shadow-lg hover:scale-105 ${modalNivel.nivelNuevo === "VIP Black" ? "bg-fuchsia-600 hover:bg-fuchsia-500 text-white" : "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"}`}>
+              Reclamar mi Estatus
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODALES INTACTOS (Ajustes y QR Ampliado) */}
       {modalAjustes && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalAjustes(false)}>
           <div className={`p-8 rounded-[3rem] shadow-2xl relative w-full max-w-sm ${modoOscuro ? "bg-[#161B2C] border border-white/10" : "bg-white"}`} onClick={e => e.stopPropagation()}>
