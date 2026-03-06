@@ -131,6 +131,7 @@ export default function PortalNegocios() {
 
         audioExito.current?.play(); 
         setJovenEscaneado(dataJoven); 
+        setPromoAplicada(""); // REINICIO DE SEGURIDAD (Borra lo que seleccionó el cajero antes)
         setModoEscaner(false);
       }
     } catch (error) { audioError.current?.play(); }
@@ -141,13 +142,13 @@ export default function PortalNegocios() {
     setRegistrandoVisita(true);
     const p = listaPromos.find(x => x.idFirebase === promoAplicada);
     
-    // DOBLE VALIDACIÓN DE SEGURIDAD EN EL SERVIDOR
+    // DOBLE VALIDACIÓN DE SEGURIDAD EN EL SERVIDOR (Back-End)
     if (p) {
       // Regla 1: Nivel de Tarjeta
       const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
       if (promoNum > jovenEscaneado.nivelUserNum) {
         audioError.current?.play();
-        alert(`❌ ACCESO DENEGADO:\nEste joven es Nivel ${jovenEscaneado.nivelNombre}. No puedes aplicarle una promoción exclusiva de Nivel ${p.nivelRequerido}.`);
+        alert(`❌ ALERTA DE SEGURIDAD:\nEl joven es Nivel ${jovenEscaneado.nivelNombre}. El sistema ha bloqueado este movimiento porque la promo es exclusiva para Nivel ${p.nivelRequerido}.`);
         setRegistrandoVisita(false);
         return;
       }
@@ -253,7 +254,6 @@ export default function PortalNegocios() {
         </div>
       )}
 
-      {/* HEADER */}
       <div className="pt-10 pb-6 px-6 max-w-md mx-auto flex justify-between items-center">
         <div className="flex items-center gap-4">
           <div className="bg-white p-2 rounded-2xl shadow-lg border border-slate-100 flex items-center justify-center">
@@ -273,7 +273,6 @@ export default function PortalNegocios() {
 
       <div className="max-w-md mx-auto px-6 mt-4 relative z-20">
         
-        {/* VISTA ESCÁNER */}
         {pestañaActiva === "escaner" && (
           <div className="space-y-6 animate-fade-in">
             <div className="bg-white rounded-[3rem] shadow-2xl shadow-emerald-900/10 p-8 text-center border border-slate-50 relative overflow-hidden">
@@ -297,38 +296,82 @@ export default function PortalNegocios() {
                 </div>
               )}
 
+              {/* PANTALLA DEL JOVEN Y TARJETAS INTELIGENTES */}
               {jovenEscaneado && (
-                <div className="animate-fade-in bg-emerald-50/50 p-6 rounded-[2.5rem] border-2 border-emerald-100/50">
-                  <div className="relative inline-block mb-4">
-                    <img src={jovenEscaneado.fotoPerfil} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-xl" alt="Joven" />
-                    <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-2 rounded-full shadow-lg border-2 border-white">
+                <div className="animate-fade-in bg-emerald-50/30 p-4 md:p-6 rounded-[2.5rem] border-2 border-emerald-100/50">
+                  <div className="relative inline-block mb-3">
+                    <img src={jovenEscaneado.fotoPerfil} className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg" alt="Joven" />
+                    <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg border-2 border-white">
                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                   </div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-1 tracking-tight">{jovenEscaneado.nombreCompleto}</h3>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Identidad Verificada</p>
+                  <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight leading-tight">{jovenEscaneado.nombreCompleto}</h3>
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Identidad Verificada</p>
                   
-                  {/* ESTATUS DEL JOVEN EN EL PORTAL EMPRESARIO */}
-                  <span className={`inline-block mb-6 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${jovenEscaneado.nivelNombre === 'Black' ? 'bg-slate-900 text-fuchsia-400' : jovenEscaneado.nivelNombre === 'Oro' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-200 text-slate-600'}`}>
-                    Nivel Actual: {jovenEscaneado.nivelNombre}
+                  {/* Etiqueta de Nivel del Joven */}
+                  <span className={`inline-block mb-6 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${jovenEscaneado.nivelNombre === 'Black' ? 'bg-slate-900 text-fuchsia-400 shadow-md' : jovenEscaneado.nivelNombre === 'Oro' ? 'bg-yellow-100 text-yellow-700 shadow-md' : 'bg-slate-200 text-slate-600'}`}>
+                    Nivel del Cliente: {jovenEscaneado.nivelNombre}
                   </span>
                   
-                  <div className="text-left space-y-4 bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
-                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">¿Qué va a canjear?</label>
-                    <select value={promoAplicada} onChange={(e) => setPromoAplicada(e.target.value)} className="w-full bg-slate-50 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all">
-                      <option value="">Ninguna (Visita Estándar)</option>
+                  <div className="text-left space-y-3 bg-white p-4 md:p-5 rounded-[2rem] shadow-sm border border-slate-100">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Selecciona el movimiento:</label>
+                    
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1 scrollbar-hide">
+                      
+                      {/* TARJETA 1: VISITA ESTÁNDAR */}
+                      <div 
+                        onClick={() => setPromoAplicada("")} 
+                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${promoAplicada === "" ? "border-emerald-500 bg-emerald-50" : "border-slate-100 bg-white hover:border-slate-200"}`}
+                      >
+                        <span className={`font-bold text-sm ${promoAplicada === "" ? "text-emerald-800" : "text-slate-600"}`}>Solo sumar visita (Sin Promo)</span>
+                        {promoAplicada === "" && <span className="text-emerald-500 text-lg">✅</span>}
+                      </div>
+
+                      {/* TARJETAS DE PROMOCIONES INTELIGENTES */}
                       {listaPromos.map(p => {
-                        // LA MAGIA DEL BLOQUEO VISUAL
                         const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
                         const bloqueada = promoNum > jovenEscaneado.nivelUserNum;
+                        const isSelected = promoAplicada === p.idFirebase;
+                        
+                        // Cálculo exacto de las visitas que le faltan al plebe
+                        const visitasRequeridas = p.nivelRequerido === 'Black' ? 40 : 15;
+                        const visitasFaltantes = visitasRequeridas - jovenEscaneado.visitasTotales;
 
                         return (
-                          <option key={p.idFirebase} value={p.idFirebase} disabled={bloqueada}>
-                            {bloqueada ? "🔒 BLOQUEADA: " : "🎁 "} {p.titulo} {bloqueada ? `(Requiere ${p.nivelRequerido})` : ""}
-                          </option>
-                        );
+                          <div 
+                            key={p.idFirebase} 
+                            onClick={() => {
+                              if(bloqueada) {
+                                audioError.current?.play();
+                                alert(`🔒 PROMOCIÓN BLOQUEADA:\nPara canjear esto, el cliente debe ser Nivel ${p.nivelRequerido}.\nA este joven le faltan ${visitasFaltantes} visitas para desbloquearlo.`);
+                              } else {
+                                setPromoAplicada(p.idFirebase);
+                              }
+                            }}
+                            className={`p-4 rounded-2xl border-2 transition-all flex flex-col gap-2 relative overflow-hidden ${bloqueada ? "border-slate-100 bg-slate-50 opacity-70 cursor-not-allowed" : isSelected ? "border-emerald-500 bg-emerald-50 shadow-md cursor-pointer" : "border-slate-100 bg-white hover:border-emerald-200 cursor-pointer"}`}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <p className={`font-black text-sm leading-tight ${bloqueada ? "text-slate-500" : (isSelected ? "text-emerald-800" : "text-slate-800")}`}>
+                                {p.titulo}
+                              </p>
+                              {isSelected && <span className="text-emerald-500 text-lg flex-shrink-0">✅</span>}
+                              {bloqueada && <span className="text-slate-400 text-lg flex-shrink-0">🔒</span>}
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <span className={`text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest ${p.nivelRequerido === 'Black' ? 'bg-slate-900 text-fuchsia-400' : p.nivelRequerido === 'Oro' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-50 text-blue-600'}`}>
+                                Req. {p.nivelRequerido}
+                              </span>
+                              {bloqueada && (
+                                <span className="text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest bg-red-100 text-red-600">
+                                  Faltan {visitasFaltantes} Visitas
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
                       })}
-                    </select>
+                    </div>
                   </div>
 
                   <button onClick={registrarVisita} disabled={registrandoVisita} className={`w-full text-white font-black py-5 rounded-[2rem] shadow-lg mt-6 uppercase text-[11px] tracking-[0.2em] transition-all ${registrandoVisita ? "bg-slate-300" : "bg-[#702032] hover:bg-slate-900 hover:shadow-xl hover:-translate-y-1"}`}>
@@ -341,7 +384,7 @@ export default function PortalNegocios() {
           </div>
         )}
 
-        {/* VISTA ESTADÍSTICAS */}
+        {/* RESTO DEL CÓDIGO INTACTO... */}
         {pestañaActiva === "estadisticas" && (
           <div className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
@@ -364,7 +407,6 @@ export default function PortalNegocios() {
           </div>
         )}
 
-        {/* VISTA PROMOS Y EMPLEOS */}
         {(pestañaActiva === "promos" || pestañaActiva === "empleos") && (
           <div className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center px-2 mb-2">
@@ -412,7 +454,6 @@ export default function PortalNegocios() {
         )}
       </div>
 
-      {/* MODAL FORMULARIOS CREADOR (Oculto para ahorrar espacio visual, intacto en funcionalidad) */}
       {creandoModal && (
         <div className="fixed inset-0 z-[90] bg-slate-900/60 backdrop-blur-sm flex flex-col justify-end animate-fade-in">
           <div className="bg-white w-full max-h-[90vh] overflow-y-auto rounded-t-[3rem] p-8 pb-32 shadow-2xl animate-slide-up relative">
