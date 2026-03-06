@@ -48,7 +48,6 @@ export default function PortalNegocios() {
   const audioExito = useRef<HTMLAudioElement | null>(null);
   const audioError = useRef<HTMLAudioElement | null>(null);
 
-  // Jerarquía Global para validación estricta
   const jerarquiaPromos = { "Clásica": 1, "Oro": 2, "Black": 3 };
 
   useEffect(() => {
@@ -99,7 +98,6 @@ export default function PortalNegocios() {
     setListaPromos(temp);
   };
 
-  // AUDITORÍA INTELIGENTE AL ESCANEAR
   const procesarQR = async (codigoQR: string) => {
     if (buscando) return; setBuscando(true);
     try {
@@ -109,9 +107,9 @@ export default function PortalNegocios() {
       if (res.empty) {
         audioError.current?.play(); alert("❌ Código no válido."); setModoEscaner(true);
       } else {
-        const dataJoven = { idFirebase: res.docs[0].id, ...res.docs[0].data() };
+        // AQUÍ ESTÁ LA CORRECCIÓN: Le pusimos ": any" para que Vercel nos deje meterle el nivel
+        let dataJoven: any = { idFirebase: res.docs[0].id, ...res.docs[0].data() };
         
-        // 1. Descargamos las visitas de este joven para saber su nivel real
         const qVisitas = query(collection(db, "visitas"), where("idJoven", "==", dataJoven.idFirebase));
         const snapVisitas = await getDocs(qVisitas);
         
@@ -124,14 +122,13 @@ export default function PortalNegocios() {
           if (diasTranscurridos <= 90) visitasActivas++;
         });
 
-        // 2. Calculamos su poder adquisitivo (Nivel)
         dataJoven.visitasTotales = visitasActivas;
         dataJoven.nivelUserNum = visitasActivas >= 40 ? 3 : (visitasActivas >= 15 ? 2 : 1);
         dataJoven.nivelNombre = visitasActivas >= 40 ? "Black" : (visitasActivas >= 15 ? "Oro" : "Clásica");
 
         audioExito.current?.play(); 
         setJovenEscaneado(dataJoven); 
-        setPromoAplicada(""); // REINICIO DE SEGURIDAD (Borra lo que seleccionó el cajero antes)
+        setPromoAplicada(""); 
         setModoEscaner(false);
       }
     } catch (error) { audioError.current?.play(); }
@@ -142,9 +139,7 @@ export default function PortalNegocios() {
     setRegistrandoVisita(true);
     const p = listaPromos.find(x => x.idFirebase === promoAplicada);
     
-    // DOBLE VALIDACIÓN DE SEGURIDAD EN EL SERVIDOR (Back-End)
     if (p) {
-      // Regla 1: Nivel de Tarjeta
       const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
       if (promoNum > jovenEscaneado.nivelUserNum) {
         audioError.current?.play();
@@ -153,7 +148,6 @@ export default function PortalNegocios() {
         return;
       }
 
-      // Regla 2: Un Solo Uso
       if (p.tipo === "Directa" && p.usoUnico) {
         const yaLoUso = historialVisitas.some(v => v.idJoven === jovenEscaneado.idFirebase && v.idPromo === p.idFirebase);
         if (yaLoUso) {
@@ -296,7 +290,6 @@ export default function PortalNegocios() {
                 </div>
               )}
 
-              {/* PANTALLA DEL JOVEN Y TARJETAS INTELIGENTES */}
               {jovenEscaneado && (
                 <div className="animate-fade-in bg-emerald-50/30 p-4 md:p-6 rounded-[2.5rem] border-2 border-emerald-100/50">
                   <div className="relative inline-block mb-3">
@@ -308,7 +301,6 @@ export default function PortalNegocios() {
                   <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight leading-tight">{jovenEscaneado.nombreCompleto}</h3>
                   <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Identidad Verificada</p>
                   
-                  {/* Etiqueta de Nivel del Joven */}
                   <span className={`inline-block mb-6 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${jovenEscaneado.nivelNombre === 'Black' ? 'bg-slate-900 text-fuchsia-400 shadow-md' : jovenEscaneado.nivelNombre === 'Oro' ? 'bg-yellow-100 text-yellow-700 shadow-md' : 'bg-slate-200 text-slate-600'}`}>
                     Nivel del Cliente: {jovenEscaneado.nivelNombre}
                   </span>
@@ -317,8 +309,6 @@ export default function PortalNegocios() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Selecciona el movimiento:</label>
                     
                     <div className="space-y-3 max-h-64 overflow-y-auto pr-1 scrollbar-hide">
-                      
-                      {/* TARJETA 1: VISITA ESTÁNDAR */}
                       <div 
                         onClick={() => setPromoAplicada("")} 
                         className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center ${promoAplicada === "" ? "border-emerald-500 bg-emerald-50" : "border-slate-100 bg-white hover:border-slate-200"}`}
@@ -327,13 +317,11 @@ export default function PortalNegocios() {
                         {promoAplicada === "" && <span className="text-emerald-500 text-lg">✅</span>}
                       </div>
 
-                      {/* TARJETAS DE PROMOCIONES INTELIGENTES */}
                       {listaPromos.map(p => {
                         const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
                         const bloqueada = promoNum > jovenEscaneado.nivelUserNum;
                         const isSelected = promoAplicada === p.idFirebase;
                         
-                        // Cálculo exacto de las visitas que le faltan al plebe
                         const visitasRequeridas = p.nivelRequerido === 'Black' ? 40 : 15;
                         const visitasFaltantes = visitasRequeridas - jovenEscaneado.visitasTotales;
 
@@ -384,7 +372,6 @@ export default function PortalNegocios() {
           </div>
         )}
 
-        {/* RESTO DEL CÓDIGO INTACTO... */}
         {pestañaActiva === "estadisticas" && (
           <div className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
@@ -535,7 +522,6 @@ export default function PortalNegocios() {
         </div>
       )}
 
-      {/* MENÚ INFERIOR */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white/90 backdrop-blur-xl shadow-2xl shadow-slate-300/50 border border-white rounded-[2rem] px-6 py-4 z-40">
         <div className="flex justify-between items-center">
           {[
