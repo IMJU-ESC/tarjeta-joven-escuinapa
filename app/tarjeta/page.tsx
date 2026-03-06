@@ -119,6 +119,27 @@ export default function TarjetaDigital() {
       })
     : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
 
+  // --- LÓGICA DE NIVELES (GAMIFICACIÓN CON CADUCIDAD) ---
+  const fechaActual = new Date();
+  
+  // Filtramos para contar SOLO las visitas de los últimos 90 días
+  const visitasActivas = miHistorial.filter(v => {
+    const fechaVisita = new Date(v.fecha);
+    const diasTranscurridos = (fechaActual.getTime() - fechaVisita.getTime()) / (1000 * 3600 * 24);
+    return diasTranscurridos <= 90; 
+  }).length;
+
+  // Nuevos umbrales (Más difíciles)
+  const esBlack = visitasActivas >= 40;
+  const esOro = visitasActivas >= 15 && visitasActivas < 40;
+  
+  // Colores dinámicos
+  const themeColors = esBlack 
+    ? { bg: "bg-[#050505]", border: "border-white/10", glow1: "bg-violet-600 group-hover:bg-fuchsia-500", glow2: "bg-fuchsia-600 group-hover:bg-violet-500", text: "from-violet-400 to-fuchsia-400", badge: "VIP BLACK" }
+    : esOro 
+    ? { bg: "bg-gradient-to-br from-yellow-900 to-[#1a1300]", border: "border-yellow-500/30", glow1: "bg-yellow-500 group-hover:bg-orange-400", glow2: "bg-orange-500 group-hover:bg-yellow-400", text: "from-yellow-300 to-yellow-600", badge: "NIVEL ORO" }
+    : { bg: "bg-gradient-to-br from-slate-900 to-[#0a1128]", border: "border-blue-500/30", glow1: "bg-blue-500 group-hover:bg-cyan-400", glow2: "bg-cyan-500 group-hover:bg-blue-400", text: "from-blue-300 to-cyan-300", badge: "CLÁSICA" };
+
   return (
     <main className={`min-h-screen pb-24 font-sans selection:bg-violet-500/30 transition-colors duration-500 overflow-x-hidden ${modoOscuro ? "bg-[#080A12] text-white" : "bg-[#F3F5F9] text-slate-900"}`}>
       
@@ -141,29 +162,29 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* TARJETA DIGITAL LUXURY (FOIL EFFECT) */}
+      {/* TARJETA DIGITAL DINÁMICA */}
       <div className="max-w-md mx-auto px-6 relative z-20 perspective-1000 animate-slide-up">
-        {/* Este grupo hace que la tarjeta reaccione al hover con un efecto 3D sutil */}
-        <div className="group relative transition-all duration-500 hover:-translate-y-2 hover:rotate-x-2 hover:shadow-[0_20px_50px_rgba(124,58,237,0.4)] bg-[#050505] rounded-[3rem] shadow-2xl shadow-violet-950/30 p-8 overflow-hidden border border-white/10">
+        <div className={`group relative transition-all duration-500 hover:-translate-y-2 hover:rotate-x-2 hover:shadow-2xl ${themeColors.bg} rounded-[3rem] p-8 overflow-hidden border ${themeColors.border}`}>
           
-          {/* EFECTO HOLOGRÁFICO (El brillo que pasa por encima) */}
           <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]"></div>
-
+          
           <div className="absolute inset-0 opacity-[0.03] text-white font-mono text-[7px] overflow-hidden rotate-12 scale-150">
-             {Array(50).fill("IMJU PLUS ESCUINAPA 2026 ").map((t,i) => <p key={i}>{t}</p>)}
+             {Array(50).fill(`IMJU PLUS ${themeColors.badge} ESCUINAPA `).map((t,i) => <p key={i}>{t}</p>)}
           </div>
-          <div className="absolute -top-24 -right-24 w-60 h-60 bg-violet-600 rounded-full mix-blend-screen filter blur-[70px] opacity-50 group-hover:bg-fuchsia-500 transition-colors duration-700"></div>
-          <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-fuchsia-600 rounded-full mix-blend-screen filter blur-[70px] opacity-50 group-hover:bg-violet-500 transition-colors duration-700"></div>
+          
+          <div className={`absolute -top-24 -right-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-50 transition-colors duration-700 ${themeColors.glow1}`}></div>
+          <div className={`absolute -bottom-24 -left-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-50 transition-colors duration-700 ${themeColors.glow2}`}></div>
 
           <div className="relative z-30 flex justify-between items-start mb-10">
             <div>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400 text-[11px] font-black tracking-[0.4em] uppercase">Tarjeta Joven</span>
+              <span className={`text-transparent bg-clip-text bg-gradient-to-r text-[11px] font-black tracking-[0.4em] uppercase ${themeColors.text}`}>Tarjeta Joven</span>
               <p className="text-white/50 text-[9px] font-mono mt-1.5 tracking-widest italic">{datosJoven.codigoUnicoQR}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5">
-               <span className="bg-white/10 backdrop-blur-lg border border-white/20 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">{datosJoven.localidad}</span>
-               {/* Chip inteligente */}
-               <div className="w-10 h-6 bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-600 rounded-md shadow-inner border border-yellow-200/50 flex flex-col justify-center gap-0.5 px-1 opacity-90">
+               <span className="bg-white/10 backdrop-blur-lg border border-white/20 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest flex items-center gap-1.5">
+                 {esBlack ? "👑" : esOro ? "⭐" : "🔹"} {themeColors.badge}
+               </span>
+               <div className="w-10 h-6 bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-400 rounded-md shadow-inner border border-white/30 flex flex-col justify-center gap-0.5 px-1 opacity-90">
                  <div className="w-full h-px bg-black/20"></div>
                  <div className="w-full h-px bg-black/20"></div>
                </div>
@@ -173,12 +194,18 @@ export default function TarjetaDigital() {
           <div className="relative z-30 flex items-center justify-between gap-6">
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500 animate-spin-slow blur-sm opacity-50"></div>
-                <img src={datosJoven.fotoPerfil} className="relative w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-2xl bg-[#050505]" />
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-tr animate-spin-slow blur-sm opacity-50 ${themeColors.text}`}></div>
+                <img src={datosJoven.fotoPerfil} className={`relative w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-2xl ${themeColors.bg}`} />
               </div>
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight leading-tight drop-shadow-md">{datosJoven.nombreCompleto}</h2>
-                <p className="text-violet-300 text-[11px] font-black uppercase tracking-widest mt-1">{datosJoven.ocupacion || "Joven Escuinapense"}</p>
+                <div className="mt-1 flex flex-col">
+                  {/* SE MUESTRA EL PUNTAJE BASADO EN LOS ÚLTIMOS 90 DÍAS */}
+                  <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest">
+                    Puntos de Nivel: <span className={`font-black text-sm ${themeColors.text} bg-clip-text text-transparent`}>{visitasActivas}</span>
+                  </p>
+                  <p className="text-white/30 text-[7px] uppercase mt-0.5">Últimos 90 días</p>
+                </div>
               </div>
             </div>
             <div className="cursor-pointer bg-white p-2 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform flex-shrink-0" onClick={() => setQrAmpliado(true)}>
@@ -188,17 +215,12 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* ESTILOS GLOBALES DE ANIMACIÓN PARA EL EFECTO LUXURY */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        @keyframes spin-slow {
-          100% { transform: rotate(360deg); }
-        }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
       `}} />
 
-      {/* RESTO DE LA APP INTACTA */}
+      {/* BUSCADOR */}
       <div className="max-w-md mx-auto px-6 mt-10">
         <div className="relative mb-6">
           <input 
@@ -277,11 +299,14 @@ export default function TarjetaDigital() {
                       )}
                       
                       <div className={`flex items-center justify-between pt-5 border-t ${modoOscuro ? "border-white/5" : "border-slate-100"}`}>
-                        <span className={`text-[10px] font-bold flex items-center gap-1.5 ${modoOscuro ? "text-slate-400" : "text-slate-400"}`}><span className="text-red-500">📍</span> {p.direccion}</span>
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion + ', Escuinapa, Sinaloa')}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-bold flex items-center gap-1.5 hover:underline cursor-pointer ${modoOscuro ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"}`}>
+                           <span className="text-red-500 text-sm">📍</span> {p.direccion}
+                        </a>
+
                         {yaCanjeado ? (
                           <span className="text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest bg-slate-200 text-slate-500">Canjeado ✔️</span>
                         ) : (
-                          <button onClick={() => setQrAmpliado(true)} className={`text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest transition-all ${modoOscuro ? "bg-violet-600 text-white shadow-lg shadow-violet-900/50" : "bg-slate-950 text-white shadow-lg shadow-slate-900/20"}`}>Usar Cupón</button>
+                          <button onClick={() => setQrAmpliado(true)} className={`text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest transition-all ${modoOscuro ? "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/50" : "bg-slate-950 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20"}`}>Usar Cupón</button>
                         )}
                       </div>
                     </div>
@@ -294,7 +319,12 @@ export default function TarjetaDigital() {
                         <p className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">{e.nombreNegocio}</p>
                         <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${modoOscuro ? "bg-[#080A12] text-slate-400" : "bg-slate-100 text-slate-500"}`}>{e.tipo}</span>
                       </div>
-                      <h4 className={`text-2xl font-black tracking-tight leading-tight ${modoOscuro ? "text-white" : "text-slate-900"}`}>{e.titulo}</h4>
+                      <h4 className={`text-2xl font-black tracking-tight leading-tight mb-4 ${modoOscuro ? "text-white" : "text-slate-900"}`}>{e.titulo}</h4>
+                      
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.direccion + ', Escuinapa, Sinaloa')}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-bold flex items-center gap-1.5 hover:underline cursor-pointer mb-5 ${modoOscuro ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"}`}>
+                         <span className="text-red-500 text-sm">📍</span> {e.direccion}
+                      </a>
+
                       <p className={`font-black text-xl mt-1.5 mb-5 ${modoOscuro ? "text-emerald-400" : "text-emerald-600"}`}>{e.sueldo}</p>
                       <button onClick={() => window.open(`https://wa.me/52${e.telefonoContacto}`, '_blank')} className={`w-full font-black py-4.5 rounded-2xl text-[11px] uppercase tracking-widest transition-colors ${modoOscuro ? "bg-[#080A12] hover:bg-black text-white" : "bg-slate-950 hover:bg-slate-800 text-white"}`}>WhatsApp</button>
                    </div>
@@ -324,7 +354,7 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* MODALES */}
+      {/* MODALES INTACTOS */}
       {modalAjustes && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalAjustes(false)}>
           <div className={`p-8 rounded-[3rem] shadow-2xl relative w-full max-w-sm ${modoOscuro ? "bg-[#161B2C] border border-white/10" : "bg-white"}`} onClick={e => e.stopPropagation()}>
