@@ -13,7 +13,6 @@ export default function PanelAdministrativo() {
   const [accesoConcedido, setAccesoConcedido] = useState(false);
   const PIN_CORRECTO = "IMJU123"; 
 
-  // --- ESTADOS DE VISTAS Y DATOS ---
   const [pestaña, setPestaña] = useState("jovenes"); 
   const [modalJoven, setModalJoven] = useState(false);
   const [modalNegocio, setModalNegocio] = useState(false);
@@ -24,10 +23,8 @@ export default function PanelAdministrativo() {
   const [cargando, setCargando] = useState(false);
   
   const [mesSeleccionado, setMesSeleccionado] = useState(new Date().toISOString().substring(0, 7));
-  
   const [busqueda, setBusqueda] = useState("");
 
-  // --- ESTADOS PARA JÓVENES ---
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idEditando, setIdEditando] = useState("");
   const [nombre, setNombre] = useState("");
@@ -38,7 +35,6 @@ export default function PanelAdministrativo() {
   const [ocupacion, setOcupacion] = useState("");
   const [fotoBase64, setFotoBase64] = useState<string | null>(null);
 
-  // --- ESTADOS PARA NEGOCIOS ---
   const [modoEdicionNegocio, setModoEdicionNegocio] = useState(false);
   const [idEditandoNegocio, setIdEditandoNegocio] = useState("");
   const [nombreNegocio, setNombreNegocio] = useState("");
@@ -47,18 +43,15 @@ export default function PanelAdministrativo() {
   const [passwordNegocio, setPasswordNegocio] = useState("");
   const [logoNegocioBase64, setLogoNegocioBase64] = useState<string | null>(null);
 
-  // --- CÁMARA ORIGINAL ---
   const [mostrarCamara, setMostrarCamara] = useState(false);
   const cameraRef = useRef<any>(null);
 
-  // 1. LOGIN
   const verificarPin = (e: React.FormEvent) => {
     e.preventDefault();
     if (pin === PIN_CORRECTO) { setAccesoConcedido(true); cargarDirectorio(); } 
     else { alert("PIN Incorrecto. Acceso denegado."); setPin(""); }
   };
 
-  // 2. CARGA DE DATOS
   const cargarDirectorio = async () => {
     setCargando(true);
     try {
@@ -95,7 +88,6 @@ export default function PanelAdministrativo() {
 
   const visitasFiltradas = visitas.filter(v => v.fecha && v.fecha.startsWith(mesSeleccionado));
 
-  // 3. PROCESAMIENTO DE IMAGEN ORIGINAL
   const procesarImagen = (fuenteImagen: string, esLogo: boolean = false) => {
     const img = new Image();
     img.src = fuenteImagen;
@@ -133,7 +125,6 @@ export default function PanelAdministrativo() {
     }
   };
 
-  // 4. CRUD JÓVENES
   const registrarJoven = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !edad || !localidad || !correo || !genero || !ocupacion) { alert("Llena todos los campos."); return; }
@@ -195,7 +186,6 @@ export default function PanelAdministrativo() {
     setFotoBase64(null); setIdEditando(""); setModoEdicion(false); setModalJoven(false); setMostrarCamara(false);
   };
 
-  // 5. CRUD NEGOCIOS
   const registrarNegocio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombreNegocio || !giroNegocio || !correoNegocio || !passwordNegocio) { alert("Llena todos los campos del negocio."); return; }
@@ -249,7 +239,6 @@ export default function PanelAdministrativo() {
     setLogoNegocioBase64(null); setIdEditandoNegocio(""); setModoEdicionNegocio(false); setModalNegocio(false);
   };
 
-  // 6. DESCARGA EXCEL INTELIGENTE (Basado en la búsqueda)
   const descargarExcel = (tipo: string) => {
     let csvContent = "\uFEFF"; 
     let nombreArchivo = "";
@@ -278,8 +267,8 @@ export default function PanelAdministrativo() {
 
   if (!accesoConcedido) {
     return (
-      <main className="min-h-screen bg-[#F3F5F9] flex items-center justify-center px-6">
-        <div className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center border border-slate-100">
+      <main className="min-h-screen bg-[#F3F5F9] flex items-center justify-center px-4 md:px-6">
+        <div className="bg-white p-8 md:p-10 rounded-[3rem] shadow-2xl max-w-sm w-full text-center border border-slate-100">
           <div className="w-20 h-20 bg-[#702032] rounded-full mx-auto mb-6 flex items-center justify-center"><img src="/imju-oficial.png" alt="IMJU" className="w-12 h-12 object-contain filter brightness-0 invert" /></div>
           <h1 className="text-2xl font-black text-slate-900 mb-2">Panel Central</h1>
           <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-8">Administración IMJU</p>
@@ -295,68 +284,76 @@ export default function PanelAdministrativo() {
   return (
     <main className="min-h-screen bg-[#F3F5F9] font-sans pb-20">
       
-      <div className="bg-[#702032] pt-8 pb-20 px-8 rounded-b-[4rem] shadow-2xl relative overflow-hidden">
-        <div className="max-w-5xl mx-auto flex justify-between items-center relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="bg-white p-2.5 rounded-2xl shadow-lg"><img src="/imju-oficial.png" alt="IMJU" className="w-12 h-12 object-contain" /></div>
-            <div><p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Ayuntamiento de Escuinapa</p><h1 className="text-2xl md:text-3xl font-black text-white">Centro de Control</h1></div>
+      <div className="bg-[#702032] pt-8 pb-20 px-4 md:px-8 rounded-b-[3rem] md:rounded-b-[4rem] shadow-2xl relative overflow-hidden">
+        {/* HEADER RESPONSIVO (Corrección de botón) */}
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center relative z-10 gap-4">
+          <div className="flex items-center gap-4 w-full md:w-auto justify-center md:justify-start">
+            <div className="bg-white p-2.5 rounded-2xl shadow-lg"><img src="/imju-oficial.png" alt="IMJU" className="w-10 h-10 md:w-12 md:h-12 object-contain" /></div>
+            <div>
+               <p className="text-rose-200 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] mb-1">Ayuntamiento de Escuinapa</p>
+               <h1 className="text-xl md:text-3xl font-black text-white text-center md:text-left">Centro de Control</h1>
+            </div>
           </div>
-          <button onClick={() => { setAccesoConcedido(false); window.location.href = "/"; }} className="bg-white/10 hover:bg-red-500/80 px-5 py-2.5 rounded-full text-white text-[10px] font-black uppercase border border-white/10 hidden md:block">Cerrar Sesión</button>
+          {/* BOTÓN VISIBLE EN MÓVIL Y PC */}
+          <button onClick={() => { setAccesoConcedido(false); window.location.href = "/"; }} className="bg-white/10 hover:bg-red-500/80 px-5 py-3 md:py-2.5 rounded-full text-white text-[10px] font-black uppercase border border-white/10 w-full md:w-auto shadow-md">Cerrar Sesión</button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 -mt-10 relative z-20">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-10 md:-mt-10 relative z-20">
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-50 flex items-center justify-between">
-            <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Juventud Registrada</p><p className="text-5xl font-black text-[#702032]">{listaJovenes.length}</p></div>
-            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-3xl">🪪</div>
+        {/* TARJETAS ESTADÍSTICAS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-xl border border-slate-50 flex items-center justify-between">
+            <div><p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Jóvenes Registrados</p><p className="text-4xl md:text-5xl font-black text-[#702032]">{listaJovenes.length}</p></div>
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-rose-50 rounded-full flex items-center justify-center text-2xl md:text-3xl">🪪</div>
           </div>
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-50 flex items-center justify-between">
-            <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Negocios Aliados</p><p className="text-5xl font-black text-emerald-600">{listaNegocios.length}</p></div>
-            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-3xl">🏪</div>
+          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-xl border border-slate-50 flex items-center justify-between">
+            <div><p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Negocios Aliados</p><p className="text-4xl md:text-5xl font-black text-emerald-600">{listaNegocios.length}</p></div>
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-emerald-50 rounded-full flex items-center justify-center text-2xl md:text-3xl">🏪</div>
           </div>
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-50 flex items-center justify-between">
-            <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Visitas del Mes</p><p className="text-5xl font-black text-indigo-600">{visitasFiltradas.length}</p></div>
-            <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-3xl">📈</div>
+          <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-xl border border-slate-50 flex items-center justify-between">
+            <div><p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Visitas del Mes</p><p className="text-4xl md:text-5xl font-black text-indigo-600">{visitasFiltradas.length}</p></div>
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-indigo-50 rounded-full flex items-center justify-center text-2xl md:text-3xl">📈</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] shadow-lg border border-slate-100 p-3 flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        {/* BARRA DE HERRAMIENTAS RESPONSIVA */}
+        <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-lg border border-slate-100 p-3 flex flex-col md:flex-row justify-between items-center gap-4 mb-6 md:mb-8">
           <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-            <button onClick={() => cambiarPestaña("jovenes")} className={`px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest ${pestaña === "jovenes" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Jóvenes</button>
-            <button onClick={() => cambiarPestaña("negocios")} className={`px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest ${pestaña === "negocios" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Negocios</button>
-            <button onClick={() => cambiarPestaña("visitas")} className={`px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest ${pestaña === "visitas" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Métricas</button>
+            <button onClick={() => cambiarPestaña("jovenes")} className={`whitespace-nowrap px-5 md:px-6 py-3 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest flex-1 md:flex-none text-center ${pestaña === "jovenes" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Jóvenes</button>
+            <button onClick={() => cambiarPestaña("negocios")} className={`whitespace-nowrap px-5 md:px-6 py-3 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest flex-1 md:flex-none text-center ${pestaña === "negocios" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Negocios</button>
+            <button onClick={() => cambiarPestaña("visitas")} className={`whitespace-nowrap px-5 md:px-6 py-3 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest flex-1 md:flex-none text-center ${pestaña === "visitas" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>Métricas</button>
           </div>
           
           <div className="flex gap-2 w-full md:w-auto">
-            {pestaña === "jovenes" && <button onClick={() => {cancelarEdicionJoven(); setModalJoven(true)}} className="flex-1 md:flex-none bg-[#702032] text-white px-5 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">+ Nuevo Joven</button>}
-            {pestaña === "negocios" && <button onClick={() => {cancelarEdicionNegocio(); setModalNegocio(true)}} className="flex-1 md:flex-none bg-emerald-600 text-white px-5 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">+ Nuevo Negocio</button>}
-            <button onClick={() => descargarExcel(pestaña)} className="flex-1 md:flex-none bg-[#107C41] text-white px-5 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2">📊 Excel</button>
+            {pestaña === "jovenes" && <button onClick={() => {cancelarEdicionJoven(); setModalJoven(true)}} className="flex-1 md:flex-none bg-[#702032] text-white px-4 md:px-5 py-3.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg">+ Joven</button>}
+            {pestaña === "negocios" && <button onClick={() => {cancelarEdicionNegocio(); setModalNegocio(true)}} className="flex-1 md:flex-none bg-emerald-600 text-white px-4 md:px-5 py-3.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg">+ Negocio</button>}
+            <button onClick={() => descargarExcel(pestaña)} className="flex-1 md:flex-none bg-[#107C41] text-white px-4 md:px-5 py-3.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-1 md:gap-2">📊 Excel</button>
           </div>
         </div>
 
-        <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 p-8 min-h-[400px] overflow-hidden">
+        {/* CONTENEDOR DE TABLAS (Ajuste de padding en celular) */}
+        <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-xl border border-slate-100 p-4 md:p-8 min-h-[400px] overflow-hidden w-full">
           
           {(pestaña === "jovenes" || pestaña === "negocios") && (
             <div className="mb-6 relative animate-fade-in">
               <input 
                 type="text" 
-                placeholder={`Buscar en ${pestaña === "jovenes" ? "Jóvenes (Nombre, ID, Correo)" : "Negocios (Comercio, Contacto, Correo)"}...`} 
+                placeholder={`Buscar en ${pestaña === "jovenes" ? "Jóvenes" : "Negocios"}...`} 
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#702032]/20 transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 md:px-6 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#702032]/20 transition-all"
               />
-              <span className="absolute right-6 top-4 text-slate-400 text-lg">🔍</span>
+              <span className="absolute right-6 top-4 text-slate-400 text-lg hidden md:block">🔍</span>
             </div>
           )}
 
           {cargando ? (
              <div className="flex flex-col items-center justify-center h-64"><div className="w-12 h-12 border-4 border-[#702032]/20 border-t-[#702032] rounded-full animate-spin mb-4"></div></div>
           ) : (
-            <>
+            <div className="w-full overflow-x-auto pb-4"> {/* Contenedor clave para scroll lateral en móvil */}
               {pestaña === "jovenes" && (
-                <div className="overflow-x-auto animate-fade-in">
+                <div className="min-w-[800px] animate-fade-in"> {/* Ancho mínimo para forzar scroll lindo y no aplastar tabla */}
                   <table className="w-full text-left border-collapse">
                     <thead><tr className="border-b-2 border-slate-100"><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Joven</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Acceso</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acciones</th></tr></thead>
                     <tbody>
@@ -371,7 +368,7 @@ export default function PanelAdministrativo() {
               )}
 
               {pestaña === "negocios" && (
-                <div className="overflow-x-auto animate-fade-in">
+                <div className="min-w-[700px] animate-fade-in">
                   <table className="w-full text-left border-collapse">
                     <thead><tr className="border-b-2 border-slate-100"><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Comercio</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giro</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Acceso</th><th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acciones</th></tr></thead>
                     <tbody>
@@ -386,10 +383,10 @@ export default function PanelAdministrativo() {
               )}
 
               {pestaña === "visitas" && (
-                <div className="overflow-x-auto animate-fade-in">
-                  <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl mb-6">
+                <div className="min-w-[600px] animate-fade-in">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50 p-4 rounded-2xl mb-6 gap-3">
                     <p className="text-sm font-black text-slate-800">Filtrar por Mes:</p>
-                    <input type="month" value={mesSeleccionado} onChange={(e) => setMesSeleccionado(e.target.value)} className="text-xs font-black text-[#702032] bg-white px-4 py-2 rounded-xl shadow-sm outline-none border border-slate-200" />
+                    <input type="month" value={mesSeleccionado} onChange={(e) => setMesSeleccionado(e.target.value)} className="text-xs font-black text-[#702032] bg-white px-4 py-2 rounded-xl shadow-sm outline-none border border-slate-200 w-full md:w-auto" />
                   </div>
 
                   <table className="w-full text-left border-collapse">
@@ -417,72 +414,70 @@ export default function PanelAdministrativo() {
                     </tbody>
                   </table>
                   {visitasFiltradas.length > 0 && (
-                    <p className="text-center text-[10px] font-bold text-slate-400 mt-6 uppercase tracking-widest">Mostrando los {visitasFiltradas.length} movimientos del mes. Descarga el Excel para respaldar.</p>
+                    <p className="text-center text-[10px] font-bold text-slate-400 mt-6 uppercase tracking-widest">Mostrando los {visitasFiltradas.length} movimientos. Descarga el Excel para respaldar.</p>
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {/* =========================================
-          MODAL: JOVEN 
-          ========================================= */}
+      {/* MODALES INTACTOS (Pero ajustando márgenes p-4 a p-6 en móvil) */}
       {modalJoven && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-8 shadow-2xl relative">
-            <button onClick={cancelarEdicionJoven} className="absolute top-6 right-6 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500">✕</button>
-            <h3 className="text-2xl font-black text-[#702032] mb-6">{modoEdicion ? "Editar Joven" : "Registro de Joven"}</h3>
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 shadow-2xl relative">
+            <button onClick={cancelarEdicionJoven} className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500">✕</button>
+            <h3 className="text-xl md:text-2xl font-black text-[#702032] mb-6">{modoEdicion ? "Editar Joven" : "Registro de Joven"}</h3>
             
             <form onSubmit={modoEdicion ? actualizarJoven : registrarJoven} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Nombre Completo" required />
+                  <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Nombre Completo" required />
                 </div>
-                <input type="number" value={edad} onChange={(e) => setEdad(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Edad" required />
-                <input type="text" value={localidad} onChange={(e) => setLocalidad(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Localidad" required />
+                <input type="number" value={edad} onChange={(e) => setEdad(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Edad" required />
+                <input type="text" value={localidad} onChange={(e) => setLocalidad(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Localidad" required />
                 
-                <select value={genero} onChange={(e) => setGenero(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold text-slate-600" required>
+                <select value={genero} onChange={(e) => setGenero(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold text-slate-600" required>
                   <option value="">Género...</option><option value="Femenino">Femenino</option><option value="Masculino">Masculino</option><option value="Prefiero no decir">Prefiero no decir</option>
                 </select>
-                <select value={ocupacion} onChange={(e) => setOcupacion(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold text-slate-600" required>
+                <select value={ocupacion} onChange={(e) => setOcupacion(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold text-slate-600" required>
                   <option value="">Ocupación...</option><option value="Estudiante">Estudiante</option><option value="Empleado">Empleado (Trabaja)</option><option value="Emprendedor">Emprendedor</option><option value="Buscando Empleo">Buscando Empleo</option>
                 </select>
                 
                 <div className="md:col-span-2">
-                  <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Correo Electrónico" required />
+                  <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#702032] outline-none font-bold" placeholder="Correo Electrónico" required />
                 </div>
 
-                <div className="md:col-span-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                <div className="md:col-span-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 md:p-6 text-center">
                   <label className="block text-sm font-semibold text-slate-700 mb-4">Fotografía del Joven</label>
                   
                   {!mostrarCamara && !fotoBase64 && (
-                    <div className="flex justify-center gap-4">
-                      <button type="button" onClick={() => setMostrarCamara(true)} className="bg-[#702032] text-white font-bold py-3 px-6 rounded-xl shadow-md text-xs uppercase tracking-widest">📸 Activar Cámara</button>
-                      <label className="bg-white text-slate-600 border-2 border-slate-200 font-bold py-3 px-6 rounded-xl cursor-pointer shadow-sm text-xs uppercase tracking-widest">
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4">
+                      <button type="button" onClick={() => setMostrarCamara(true)} className="w-full sm:w-auto bg-[#702032] text-white font-bold py-3 px-6 rounded-xl shadow-md text-[10px] md:text-xs uppercase tracking-widest">📸 Activar Cámara</button>
+                      <label className="w-full sm:w-auto bg-white text-slate-600 border-2 border-slate-200 font-bold py-3 px-6 rounded-xl cursor-pointer shadow-sm text-[10px] md:text-xs uppercase tracking-widest">
                         📁 Galería <input type="file" accept="image/*" onChange={(e) => manejarSubidaArchivo(e, false)} className="hidden" />
                       </label>
                     </div>
                   )}
 
                   {mostrarCamara && (
-                    <div className="relative w-full h-72 rounded-2xl overflow-hidden mb-4 border-4 border-[#702032]">
+                    <div className="relative w-full h-64 md:h-72 rounded-2xl overflow-hidden mb-4 border-4 border-[#702032]">
                       {/* @ts-ignore: Bypass para Vercel */}
                       <Camera ref={cameraRef} facingMode="user" errorMessages={{ noCameraAccessible: 'Sin cámara', permissionDenied: 'Sin permiso', switchCamera: 'Error', canvas: 'Error' }} />
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                        <button type="button" onClick={() => setMostrarCamara(false)} className="bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs">Cancelar</button>
-                        <button type="button" onClick={() => { const d = cameraRef.current?.takePhoto(); if(d) procesarImagen(d, false); }} className="bg-[#702032] text-white font-bold py-2 px-4 rounded-xl text-xs shadow-xl border-2 border-white">Tomar Foto</button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10 w-[90%] md:w-auto justify-center">
+                        <button type="button" onClick={() => setMostrarCamara(false)} className="flex-1 md:flex-none bg-slate-800 text-white font-bold py-2 px-4 rounded-xl text-xs">Cancelar</button>
+                        <button type="button" onClick={() => { const d = cameraRef.current?.takePhoto(); if(d) procesarImagen(d, false); }} className="flex-1 md:flex-none bg-[#702032] text-white font-bold py-2 px-4 rounded-xl text-xs shadow-xl border-2 border-white">Tomar Foto</button>
                       </div>
                     </div>
                   )}
 
                   {fotoBase64 && (
                     <div className="flex flex-col items-center">
-                        <img src={fotoBase64} alt="Previa" className="w-32 h-32 object-cover rounded-full border-4 border-[#702032] mb-3 shadow-lg" />
+                        <img src={fotoBase64} alt="Previa" className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-full border-4 border-[#702032] mb-3 shadow-lg" />
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => setMostrarCamara(true)} className="text-xs bg-white text-[#702032] font-bold px-4 py-2 rounded-xl border border-slate-200">📸 Cámara</button>
-                          <label className="text-xs bg-white text-slate-600 font-bold px-4 py-2 rounded-xl border border-slate-200 cursor-pointer">
+                          <button type="button" onClick={() => setMostrarCamara(true)} className="text-[10px] md:text-xs bg-white text-[#702032] font-bold px-4 py-2 rounded-xl border border-slate-200">📸 Cámara</button>
+                          <label className="text-[10px] md:text-xs bg-white text-slate-600 font-bold px-4 py-2 rounded-xl border border-slate-200 cursor-pointer">
                             📁 Galería <input type="file" accept="image/*" onChange={(e) => manejarSubidaArchivo(e, false)} className="hidden" />
                           </label>
                         </div>
@@ -494,13 +489,13 @@ export default function PanelAdministrativo() {
               <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" required className="w-5 h-5 mt-0.5 accent-[#702032] cursor-pointer rounded" />
-                  <span className="text-xs font-medium text-slate-600 leading-tight">
+                  <span className="text-[10px] md:text-xs font-medium text-slate-600 leading-tight">
                     Confirmo que el usuario ha leído y acepta el <a href="#" className="text-[#702032] font-bold underline">Aviso de Privacidad</a> del Instituto Municipal de la Juventud de Escuinapa.
                   </span>
                 </label>
               </div>
               
-              <button type="submit" disabled={cargando} className={`w-full mt-4 text-white font-black py-4 rounded-2xl uppercase tracking-widest transition-all ${cargando ? "bg-slate-400" : "bg-[#702032] hover:bg-slate-900 shadow-lg"}`}>
+              <button type="submit" disabled={cargando} className={`w-full mt-4 text-white font-black py-4 rounded-xl md:rounded-2xl text-xs uppercase tracking-widest transition-all ${cargando ? "bg-slate-400" : "bg-[#702032] hover:bg-slate-900 shadow-lg"}`}>
                 {cargando ? "Procesando..." : (modoEdicion ? "Guardar Cambios" : "Registrar y Enviar Correo")}
               </button>
             </form>
@@ -508,40 +503,37 @@ export default function PanelAdministrativo() {
         </div>
       )}
 
-      {/* =========================================
-          MODAL: NEGOCIO
-          ========================================= */}
       {modalNegocio && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 animate-fade-in">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-8 shadow-2xl relative">
-            <button onClick={cancelarEdicionNegocio} className="absolute top-6 right-6 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500">✕</button>
-            <h3 className="text-2xl font-black text-emerald-600 mb-6">{modoEdicionNegocio ? "Editar Negocio" : "Alta de Negocio"}</h3>
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[2rem] md:rounded-[3rem] p-6 md:p-8 shadow-2xl relative">
+            <button onClick={cancelarEdicionNegocio} className="absolute top-4 right-4 md:top-6 md:right-6 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500">✕</button>
+            <h3 className="text-xl md:text-2xl font-black text-emerald-600 mb-6">{modoEdicionNegocio ? "Editar Negocio" : "Alta de Negocio"}</h3>
             
             <form onSubmit={modoEdicionNegocio ? actualizarNegocio : registrarNegocio} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <input type="text" value={nombreNegocio} onChange={(e) => setNombreNegocio(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Nombre Comercial" required />
+                  <input type="text" value={nombreNegocio} onChange={(e) => setNombreNegocio(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Nombre Comercial" required />
                 </div>
                 
                 <div className="md:col-span-2">
-                  <select value={giroNegocio} onChange={(e) => setGiroNegocio(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-slate-600" required>
+                  <select value={giroNegocio} onChange={(e) => setGiroNegocio(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-slate-600" required>
                     <option value="">Selecciona el giro...</option><option value="Alimentos y Bebidas">Alimentos y Bebidas</option><option value="Ropa y Calzado">Ropa y Calzado</option><option value="Salud y Belleza">Salud y Belleza</option><option value="Educación y Cursos">Educación y Cursos</option><option value="Servicios">Servicios Profesionales</option><option value="Entretenimiento">Entretenimiento</option><option value="Otro">Otro</option>
                   </select>
                 </div>
                 
-                <input type="email" value={correoNegocio} onChange={(e) => setCorreoNegocio(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Correo (Usuario)" required />
-                <input type="text" value={passwordNegocio} onChange={(e) => setPasswordNegocio(e.target.value)} className="w-full border border-slate-200 rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Contraseña asignada" required />
+                <input type="email" value={correoNegocio} onChange={(e) => setCorreoNegocio(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Correo (Usuario)" required />
+                <input type="text" value={passwordNegocio} onChange={(e) => setPasswordNegocio(e.target.value)} className="w-full border border-slate-200 rounded-xl md:rounded-2xl px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold" placeholder="Contraseña asignada" required />
 
-                <div className="md:col-span-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                <div className="md:col-span-2 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 md:p-6 text-center">
                   <label className="block text-sm font-semibold text-slate-700 mb-4">Logo del Negocio</label>
                   {!logoNegocioBase64 ? (
-                    <label className="bg-white text-emerald-600 border-2 border-emerald-600 font-bold py-3 px-6 rounded-xl cursor-pointer shadow-sm text-xs uppercase tracking-widest inline-block">
+                    <label className="bg-white text-emerald-600 border-2 border-emerald-600 font-bold py-3 px-6 rounded-xl cursor-pointer shadow-sm text-[10px] md:text-xs uppercase tracking-widest inline-block">
                       📁 Subir Logo <input type="file" accept="image/*" onChange={(e) => manejarSubidaArchivo(e, true)} className="hidden" />
                     </label>
                   ) : (
                     <div className="flex flex-col items-center">
-                        <img src={logoNegocioBase64} alt="Logo" className="w-32 h-32 object-contain rounded-xl border border-slate-200 mb-3 bg-white" />
-                        <label className="text-xs bg-white text-slate-600 font-bold px-4 py-2 rounded-xl border border-slate-200 cursor-pointer">
+                        <img src={logoNegocioBase64} alt="Logo" className="w-24 h-24 md:w-32 md:h-32 object-contain rounded-xl border border-slate-200 mb-3 bg-white" />
+                        <label className="text-[10px] md:text-xs bg-white text-slate-600 font-bold px-4 py-2 rounded-xl border border-slate-200 cursor-pointer">
                           📁 Cambiar <input type="file" accept="image/*" onChange={(e) => manejarSubidaArchivo(e, true)} className="hidden" />
                         </label>
                     </div>
@@ -552,13 +544,13 @@ export default function PanelAdministrativo() {
               <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" required className="w-5 h-5 mt-0.5 accent-emerald-600 cursor-pointer rounded" />
-                  <span className="text-xs font-medium text-slate-600 leading-tight">
+                  <span className="text-[10px] md:text-xs font-medium text-slate-600 leading-tight">
                     Confirmo que el negocio ha leído y acepta el <a href="#" className="text-emerald-600 font-bold underline">Aviso de Privacidad</a> del IMJU.
                   </span>
                 </label>
               </div>
               
-              <button type="submit" disabled={cargando} className={`w-full mt-4 text-white font-black py-4 rounded-2xl uppercase tracking-widest transition-all ${cargando ? "bg-slate-400" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"}`}>
+              <button type="submit" disabled={cargando} className={`w-full mt-4 text-white font-black py-4 rounded-xl md:rounded-2xl text-xs uppercase tracking-widest transition-all ${cargando ? "bg-slate-400" : "bg-emerald-600 hover:bg-emerald-700 shadow-lg"}`}>
                 {cargando ? "Procesando..." : (modoEdicionNegocio ? "Guardar Cambios" : "Registrar Negocio")}
               </button>
             </form>

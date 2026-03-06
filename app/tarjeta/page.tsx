@@ -19,6 +19,9 @@ export default function TarjetaDigital() {
   const [busqueda, setBusqueda] = useState("");
   const [modoOscuro, setModoOscuro] = useState(false);
 
+  // NUEVO: Estado para rastrear empleos contactados (memoria local)
+  const [empleosContactados, setEmpleosContactados] = useState<string[]>([]);
+
   const [modalAjustes, setModalAjustes] = useState(false);
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [cambiandoPass, setCambiandoPass] = useState(false);
@@ -30,6 +33,13 @@ export default function TarjetaDigital() {
     if (sesionGuardada) {
       const joven = JSON.parse(sesionGuardada);
       setDatosJoven(joven);
+      
+      // Cargamos de la memoria interna los empleos que YA contactó este joven
+      const contactadosGuardados = localStorage.getItem(`empleos_${joven.idFirebase}`);
+      if(contactadosGuardados) {
+        setEmpleosContactados(JSON.parse(contactadosGuardados));
+      }
+
       cargarTodo(joven.idFirebase);
     } else {
       router.push("/login");
@@ -106,6 +116,17 @@ export default function TarjetaDigital() {
     window.location.href = "/";
   };
 
+  // NUEVO: Función inteligente para contactar un empleo y guardarlo en memoria
+  const abrirWhatsAppEmpleo = (empleo: any) => {
+    if (!empleosContactados.includes(empleo.idFirebase)) {
+      const nuevosGuardados = [...empleosContactados, empleo.idFirebase];
+      setEmpleosContactados(nuevosGuardados);
+      localStorage.setItem(`empleos_${datosJoven.idFirebase}`, JSON.stringify(nuevosGuardados));
+    }
+    // Abrimos el chat de WhatsApp real
+    window.open(`https://wa.me/52${empleo.telefonoContacto}`, '_blank');
+  };
+
   if (!datosJoven) return null;
 
   const hoy = new Date().toISOString().split("T")[0];
@@ -130,7 +151,6 @@ export default function TarjetaDigital() {
   const esBlack = visitasActivas >= 40;
   const esOro = visitasActivas >= 15 && visitasActivas < 40;
   
-  // Jerarquía Numérica para bloquear promos
   const nivelUserNum = esBlack ? 3 : (esOro ? 2 : 1);
   const jerarquiaPromos = { "Clásica": 1, "Oro": 2, "Black": 3 };
   
@@ -167,7 +187,6 @@ export default function TarjetaDigital() {
         <div className={`group relative transition-all duration-500 hover:-translate-y-2 hover:rotate-x-2 hover:shadow-2xl ${themeColors.bg} rounded-[3rem] p-8 overflow-hidden border ${themeColors.border}`}>
           
           <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]"></div>
-          
           <div className="absolute inset-0 opacity-[0.03] text-white font-mono text-[7px] overflow-hidden rotate-12 scale-150">
              {Array(50).fill(`IMJU PLUS ${themeColors.badge} ESCUINAPA `).map((t,i) => <p key={i}>{t}</p>)}
           </div>
@@ -252,7 +271,7 @@ export default function TarjetaDigital() {
             </div>
         )}
 
-        {/* LISTA DE PROMOCIONES (EFECTO FOMO AQUÍ) */}
+        {/* LISTA DE PUBLICACIONES */}
         <div className="space-y-6 mt-2">
           {cargandoDatos ? (
             <div className="flex flex-col items-center py-20"><div className="w-9 h-9 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div></div>
@@ -263,16 +282,13 @@ export default function TarjetaDigital() {
               <>
                 {pestañaActiva === "promos" && filtrados.map((p) => {
                   
-                  // LÓGICA DE BLOQUEO POR NIVEL
                   const nivelPromo = p.nivelRequerido || "Clásica";
                   const promoNum = jerarquiaPromos[nivelPromo as keyof typeof jerarquiaPromos] || 1;
                   const bloqueada = promoNum > nivelUserNum;
 
-                  // SI ESTÁ BLOQUEADA, MOSTRAMOS LA CAJA MISTERIOSA
                   if (bloqueada) {
                     return (
                       <div key={p.idFirebase} className={`relative rounded-[2.5rem] p-6 transition-all duration-300 overflow-hidden ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-sm border border-slate-100"}`}>
-                        {/* Contenido Falso Borroso para dar curiosidad */}
                         <div className="filter blur-md opacity-40 pointer-events-none select-none">
                           <div className="flex gap-4 items-center mb-5">
                             <div className={`w-16 h-16 rounded-2xl ${modoOscuro ? "bg-slate-800" : "bg-slate-200"}`}></div>
@@ -285,7 +301,6 @@ export default function TarjetaDigital() {
                           <div className={`h-3 w-4/5 rounded ${modoOscuro ? "bg-slate-800" : "bg-slate-200"}`}></div>
                         </div>
 
-                        {/* Candado Flotante */}
                         <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-6 ${modoOscuro ? "bg-black/40" : "bg-white/40"} backdrop-blur-sm`}>
                           <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-3 shadow-2xl ${nivelPromo === "Black" ? "bg-[#050505] text-fuchsia-400 border border-white/10" : "bg-gradient-to-br from-yellow-500 to-yellow-700 text-white border border-yellow-300/30"}`}>🔒</div>
                           <h4 className={`text-xl font-black leading-tight drop-shadow-md ${modoOscuro ? "text-white" : "text-slate-900"}`}>Exclusivo Nivel {nivelPromo}</h4>
@@ -295,7 +310,6 @@ export default function TarjetaDigital() {
                     );
                   }
 
-                  // SI NO ESTÁ BLOQUEADA, SE MUESTRA NORMAL
                   const { actual, porcentaje } = obtenerProgreso(p.idFirebase, p.visitasMeta);
                   const esFrecuente = p.tipo === "Frecuente";
                   const esUnicoUso = p.usoUnico === true;
@@ -347,24 +361,41 @@ export default function TarjetaDigital() {
                   );
                 })}
 
-                {/* EMPLEOS Y ACTIVIDAD INTACTOS */}
-                {pestañaActiva === "empleos" && filtrados.map((e) => (
-                   <div key={e.idFirebase} className={`rounded-[2.5rem] p-7 transition-all ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-lg border border-slate-50"}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <p className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">{e.nombreNegocio}</p>
-                        <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${modoOscuro ? "bg-[#080A12] text-slate-400" : "bg-slate-100 text-slate-500"}`}>{e.tipo}</span>
-                      </div>
-                      <h4 className={`text-2xl font-black tracking-tight leading-tight mb-4 ${modoOscuro ? "text-white" : "text-slate-900"}`}>{e.titulo}</h4>
-                      
-                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.direccion + ', Escuinapa, Sinaloa')}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-bold flex items-center gap-1.5 hover:underline cursor-pointer mb-5 ${modoOscuro ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"}`}>
-                         <span className="text-red-500 text-sm">📍</span> {e.direccion}
-                      </a>
+                {/* EMPLEOS CON BOTÓN INTELIGENTE (Ya contactado) */}
+                {pestañaActiva === "empleos" && filtrados.map((e) => {
+                   
+                   const yaContactado = empleosContactados.includes(e.idFirebase);
 
-                      <p className={`font-black text-xl mt-1.5 mb-5 ${modoOscuro ? "text-emerald-400" : "text-emerald-600"}`}>{e.sueldo}</p>
-                      <button onClick={() => window.open(`https://wa.me/52${e.telefonoContacto}`, '_blank')} className={`w-full font-black py-4.5 rounded-2xl text-[11px] uppercase tracking-widest transition-colors ${modoOscuro ? "bg-[#080A12] hover:bg-black text-white" : "bg-slate-950 hover:bg-slate-800 text-white"}`}>WhatsApp</button>
-                   </div>
-                ))}
+                   return (
+                     <div key={e.idFirebase} className={`rounded-[2.5rem] p-7 transition-all ${modoOscuro ? "bg-[#111625] border border-white/5" : "bg-white shadow-lg border border-slate-50"}`}>
+                        <div className="flex justify-between items-start mb-4">
+                          <p className="text-[10px] font-black text-fuchsia-400 uppercase tracking-widest">{e.nombreNegocio}</p>
+                          <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${modoOscuro ? "bg-[#080A12] text-slate-400" : "bg-slate-100 text-slate-500"}`}>{e.tipo}</span>
+                        </div>
+                        <h4 className={`text-2xl font-black tracking-tight leading-tight mb-4 ${modoOscuro ? "text-white" : "text-slate-900"}`}>{e.titulo}</h4>
+                        
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.direccion + ', Escuinapa, Sinaloa')}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-bold flex items-center gap-1.5 hover:underline cursor-pointer mb-5 ${modoOscuro ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"}`}>
+                           <span className="text-red-500 text-sm">📍</span> {e.direccion}
+                        </a>
 
+                        <p className={`font-black text-xl mt-1.5 mb-5 ${modoOscuro ? "text-emerald-400" : "text-emerald-600"}`}>{e.sueldo}</p>
+                        
+                        {/* Botón Inteligente WhatsApp */}
+                        <button 
+                          onClick={() => abrirWhatsAppEmpleo(e)} 
+                          className={`w-full font-black py-4.5 rounded-2xl text-[11px] uppercase tracking-widest transition-colors shadow-sm ${
+                            yaContactado 
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200 hover:bg-emerald-200" 
+                              : (modoOscuro ? "bg-[#080A12] hover:bg-black text-white" : "bg-slate-950 hover:bg-slate-800 text-white")
+                          }`}
+                        >
+                          {yaContactado ? "✅ Ya contactado (WhatsApp)" : "💬 WhatsApp"}
+                        </button>
+                     </div>
+                   );
+                })}
+
+                {/* ACTIVIDAD */}
                 {pestañaActiva === "actividad" && (
                   <div className="space-y-4">
                     {miHistorial.length === 0 ? (
@@ -389,7 +420,7 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* MODALES INTACTOS (Ajustes y QR Ampliado) */}
+      {/* MODALES INTACTOS */}
       {modalAjustes && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalAjustes(false)}>
           <div className={`p-8 rounded-[3rem] shadow-2xl relative w-full max-w-sm ${modoOscuro ? "bg-[#161B2C] border border-white/10" : "bg-white"}`} onClick={e => e.stopPropagation()}>
