@@ -20,7 +20,6 @@ export default function TarjetaDigital() {
   const [modoOscuro, setModoOscuro] = useState(false);
   const [empleosContactados, setEmpleosContactados] = useState<string[]>([]);
 
-  // NUEVO: Estado para el modal de celebración
   const [modalNivel, setModalNivel] = useState<{mostrar: boolean, nivelNuevo: string, visitas: number} | null>(null);
 
   const [modalAjustes, setModalAjustes] = useState(false);
@@ -70,7 +69,6 @@ export default function TarjetaDigital() {
     setCargandoDatos(false);
   };
 
-  // DETECTOR DE SUBIDA DE NIVEL
   useEffect(() => {
     if (miHistorial.length > 0 && datosJoven) {
       const fechaActual = new Date();
@@ -89,17 +87,13 @@ export default function TarjetaDigital() {
       const nivelAnterior = localStorage.getItem(keyNivel);
       
       if (!nivelAnterior) {
-        // Si es la primera vez que entra, solo guardamos el nivel sin festejar
         localStorage.setItem(keyNivel, nivelCalculado);
       } else {
         const jerarquiaAnterior = nivelAnterior === "VIP Black" ? 3 : (nivelAnterior === "Nivel Oro" ? 2 : 1);
-        
-        // ¡Si la jerarquía nueva es mayor, HAY FIESTA!
         if (jerarquiaCalculada > jerarquiaAnterior) {
           setModalNivel({ mostrar: true, nivelNuevo: nivelCalculado, visitas: activas });
-          localStorage.setItem(keyNivel, nivelCalculado); // Actualizamos la memoria
+          localStorage.setItem(keyNivel, nivelCalculado); 
         } else if (jerarquiaCalculada < jerarquiaAnterior) {
-          // Si bajó de nivel por inactividad, lo bajamos silenciosamente
           localStorage.setItem(keyNivel, nivelCalculado);
         }
       }
@@ -161,18 +155,7 @@ export default function TarjetaDigital() {
 
   if (!datosJoven) return null;
 
-  const hoy = new Date().toISOString().split("T")[0];
-  const promosVigentes = listaPromos.filter(p => !p.fechaVencimiento || p.fechaVencimiento >= hoy);
-
-  const filtrados = pestañaActiva === "promos" 
-    ? promosVigentes.filter(p => {
-        const coincideBusqueda = p.nombreNegocio.toLowerCase().includes(busqueda.toLowerCase()) || p.titulo.toLowerCase().includes(busqueda.toLowerCase());
-        const coincideFiltro = filtroTipoPromo === "todos" || p.tipo === filtroTipoPromo;
-        return coincideBusqueda && coincideFiltro;
-      })
-    : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
-
-  // LÓGICA DE NIVELES 
+  // LÓGICA DE NIVELES PREVIA AL FILTRADO (Para poder ordenar)
   const fechaActual = new Date();
   const visitasActivas = miHistorial.filter(v => {
     const fechaVisita = new Date(v.fecha);
@@ -185,6 +168,36 @@ export default function TarjetaDigital() {
   
   const nivelUserNum = esBlack ? 3 : (esOro ? 2 : 1);
   const jerarquiaPromos = { "Clásica": 1, "Oro": 2, "Black": 3 };
+
+  const hoy = new Date().toISOString().split("T")[0];
+  const promosVigentes = listaPromos.filter(p => !p.fechaVencimiento || p.fechaVencimiento >= hoy);
+
+  // FILTRADO Y ALGORITMO DE ORDENAMIENTO FOMO
+  const filtrados = pestañaActiva === "promos" 
+    ? promosVigentes
+        .filter(p => {
+          const coincideBusqueda = p.nombreNegocio.toLowerCase().includes(busqueda.toLowerCase()) || p.titulo.toLowerCase().includes(busqueda.toLowerCase());
+          const coincideFiltro = filtroTipoPromo === "todos" || p.tipo === filtroTipoPromo;
+          return coincideBusqueda && coincideFiltro;
+        })
+        .sort((a, b) => {
+          const numA = jerarquiaPromos[a.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
+          const numB = jerarquiaPromos[b.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
+          
+          const blockA = numA > nivelUserNum;
+          const blockB = numB > nivelUserNum;
+
+          // 1. Desbloqueadas siempre van arriba
+          if (blockA !== blockB) return blockA ? 1 : -1;
+          
+          // 2. Si ambas están Desbloqueadas, muestra las de mayor nivel primero (presumir)
+          if (!blockA && !blockB) return numB - numA;
+          
+          // 3. Si ambas están Bloqueadas, muestra las más cercanas a alcanzar primero
+          return numA - numB;
+        })
+    : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
+
   
   const themeColors = esBlack 
     ? { bg: "bg-[#050505]", border: "border-white/10", glow1: "bg-violet-600 group-hover:bg-fuchsia-500", glow2: "bg-fuchsia-600 group-hover:bg-violet-500", text: "from-violet-400 to-fuchsia-400", badge: "VIP BLACK" }
@@ -251,7 +264,6 @@ export default function TarjetaDigital() {
               <div>
                 <h2 className="text-2xl font-black text-white tracking-tight leading-tight drop-shadow-md">{datosJoven.nombreCompleto}</h2>
                 <div className="mt-1 flex flex-col">
-                  {/* CORRECCIÓN DE LOS PUNTOS DE NIVEL (Colores sólidos) */}
                   <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest">
                     Puntos de Nivel: <span className={`font-black text-sm ml-1 ${esBlack ? 'text-fuchsia-400' : esOro ? 'text-yellow-400' : 'text-cyan-400'}`}>{visitasActivas}</span>
                   </p>
@@ -304,7 +316,7 @@ export default function TarjetaDigital() {
             </div>
         )}
 
-        {/* LISTA DE PUBLICACIONES */}
+        {/* LISTA ORDENADA DE PROMOCIONES */}
         <div className="space-y-6 mt-2">
           {cargandoDatos ? (
             <div className="flex flex-col items-center py-20"><div className="w-9 h-9 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div></div>
