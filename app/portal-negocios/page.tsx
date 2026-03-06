@@ -107,7 +107,6 @@ export default function PortalNegocios() {
       if (res.empty) {
         audioError.current?.play(); alert("❌ Código no válido."); setModoEscaner(true);
       } else {
-        // AQUÍ ESTÁ LA CORRECCIÓN: Le pusimos ": any" para que Vercel nos deje meterle el nivel
         let dataJoven: any = { idFirebase: res.docs[0].id, ...res.docs[0].data() };
         
         const qVisitas = query(collection(db, "visitas"), where("idJoven", "==", dataJoven.idFirebase));
@@ -144,6 +143,26 @@ export default function PortalNegocios() {
       if (promoNum > jovenEscaneado.nivelUserNum) {
         audioError.current?.play();
         alert(`❌ ALERTA DE SEGURIDAD:\nEl joven es Nivel ${jovenEscaneado.nivelNombre}. El sistema ha bloqueado este movimiento porque la promo es exclusiva para Nivel ${p.nivelRequerido}.`);
+        setRegistrandoVisita(false);
+        return;
+      }
+
+      // VALIDACIÓN BACKEND DE DÍAS
+      const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+      const hoyTexto = diasSemana[new Date().getDay()];
+      const esFinDeSemana = hoyTexto === "Sábado" || hoyTexto === "Domingo";
+      const esSemana = hoyTexto !== "Sábado" && hoyTexto !== "Domingo";
+      
+      let bloqueadaPorDia = false;
+      if (p.diasValidos) {
+        if (p.diasValidos === "Fines de semana" && !esFinDeSemana) bloqueadaPorDia = true;
+        else if (p.diasValidos === "Lunes a Viernes" && !esSemana) bloqueadaPorDia = true;
+        else if (p.diasValidos.startsWith("Solo ") && p.diasValidos !== `Solo ${hoyTexto}`) bloqueadaPorDia = true;
+      }
+
+      if (bloqueadaPorDia) {
+        audioError.current?.play();
+        alert(`❌ OPERACIÓN RECHAZADA:\nEsta promoción solo es válida en días específicos (${p.diasValidos}). Hoy es ${hoyTexto}.`);
         setRegistrandoVisita(false);
         return;
       }
@@ -318,8 +337,26 @@ export default function PortalNegocios() {
                       </div>
 
                       {listaPromos.map(p => {
+                        // VALIDACIÓN DE NIVEL
                         const promoNum = jerarquiaPromos[p.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
-                        const bloqueada = promoNum > jovenEscaneado.nivelUserNum;
+                        let bloqueadaPorNivel = promoNum > jovenEscaneado.nivelUserNum;
+                        
+                        // VALIDACIÓN DE DÍA DE LA SEMANA
+                        const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                        const hoyTexto = diasSemana[new Date().getDay()];
+                        const esFinDeSemana = hoyTexto === "Sábado" || hoyTexto === "Domingo";
+                        const esSemana = hoyTexto !== "Sábado" && hoyTexto !== "Domingo";
+                        
+                        let bloqueadaPorDia = false;
+                        let mensajeDia = "";
+
+                        if (p.diasValidos) {
+                          if (p.diasValidos === "Fines de semana" && !esFinDeSemana) { bloqueadaPorDia = true; mensajeDia = "Solo Fines de Semana"; }
+                          else if (p.diasValidos === "Lunes a Viernes" && !esSemana) { bloqueadaPorDia = true; mensajeDia = "Solo Lun-Vie"; }
+                          else if (p.diasValidos.startsWith("Solo ") && p.diasValidos !== `Solo ${hoyTexto}`) { bloqueadaPorDia = true; mensajeDia = p.diasValidos; }
+                        }
+
+                        const bloqueada = bloqueadaPorNivel || bloqueadaPorDia;
                         const isSelected = promoAplicada === p.idFirebase;
                         
                         const visitasRequeridas = p.nivelRequerido === 'Black' ? 40 : 15;
@@ -329,9 +366,10 @@ export default function PortalNegocios() {
                           <div 
                             key={p.idFirebase} 
                             onClick={() => {
-                              if(bloqueada) {
-                                audioError.current?.play();
-                                alert(`🔒 PROMOCIÓN BLOQUEADA:\nPara canjear esto, el cliente debe ser Nivel ${p.nivelRequerido}.\nA este joven le faltan ${visitasFaltantes} visitas para desbloquearlo.`);
+                              if(bloqueadaPorNivel) {
+                                audioError.current?.play(); alert(`🔒 PROMOCIÓN BLOQUEADA:\nPara canjear esto, el cliente debe ser Nivel ${p.nivelRequerido}.\nA este joven le faltan ${visitasFaltantes} visitas para desbloquearlo.`);
+                              } else if (bloqueadaPorDia) {
+                                audioError.current?.play(); alert(`🔒 BLOQUEO DE DÍA:\nEsta promoción no se puede usar hoy. Regla: ${p.diasValidos}`);
                               } else {
                                 setPromoAplicada(p.idFirebase);
                               }
@@ -347,13 +385,21 @@ export default function PortalNegocios() {
                             </div>
 
                             <div className="flex flex-wrap gap-2 items-center">
-                              <span className={`text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest ${p.nivelRequerido === 'Black' ? 'bg-slate-900 text-fuchsia-400' : p.nivelRequerido === 'Oro' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-50 text-blue-600'}`}>
-                                Req. {p.nivelRequerido}
-                              </span>
-                              {bloqueada && (
-                                <span className="text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest bg-red-100 text-red-600">
-                                  Faltan {visitasFaltantes} Visitas
-                                </span>
+                              {bloqueadaPorDia ? (
+                                 <span className="text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest bg-orange-100 text-orange-700">
+                                   Hoy no aplica ({mensajeDia})
+                                 </span>
+                              ) : (
+                                <>
+                                  <span className={`text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest ${p.nivelRequerido === 'Black' ? 'bg-slate-900 text-fuchsia-400' : p.nivelRequerido === 'Oro' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-50 text-blue-600'}`}>
+                                    Req. {p.nivelRequerido}
+                                  </span>
+                                  {bloqueadaPorNivel && (
+                                    <span className="text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest bg-red-100 text-red-600">
+                                      Faltan {visitasFaltantes} Visitas
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

@@ -155,7 +155,6 @@ export default function TarjetaDigital() {
 
   if (!datosJoven) return null;
 
-  // LÓGICA DE NIVELES PREVIA AL FILTRADO (Para poder ordenar)
   const fechaActual = new Date();
   const visitasActivas = miHistorial.filter(v => {
     const fechaVisita = new Date(v.fecha);
@@ -172,7 +171,6 @@ export default function TarjetaDigital() {
   const hoy = new Date().toISOString().split("T")[0];
   const promosVigentes = listaPromos.filter(p => !p.fechaVencimiento || p.fechaVencimiento >= hoy);
 
-  // FILTRADO Y ALGORITMO DE ORDENAMIENTO FOMO
   const filtrados = pestañaActiva === "promos" 
     ? promosVigentes
         .filter(p => {
@@ -183,27 +181,20 @@ export default function TarjetaDigital() {
         .sort((a, b) => {
           const numA = jerarquiaPromos[a.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
           const numB = jerarquiaPromos[b.nivelRequerido as keyof typeof jerarquiaPromos] || 1;
-          
           const blockA = numA > nivelUserNum;
           const blockB = numB > nivelUserNum;
-
-          // 1. Desbloqueadas siempre van arriba
           if (blockA !== blockB) return blockA ? 1 : -1;
-          
-          // 2. Si ambas están Desbloqueadas, muestra las de mayor nivel primero (presumir)
           if (!blockA && !blockB) return numB - numA;
-          
-          // 3. Si ambas están Bloqueadas, muestra las más cercanas a alcanzar primero
           return numA - numB;
         })
     : listaEmpleos.filter(e => e.titulo.toLowerCase().includes(busqueda.toLowerCase()));
 
   
   const themeColors = esBlack 
-    ? { bg: "bg-[#050505]", border: "border-white/10", glow1: "bg-violet-600 group-hover:bg-fuchsia-500", glow2: "bg-fuchsia-600 group-hover:bg-violet-500", text: "from-violet-400 to-fuchsia-400", badge: "VIP BLACK" }
+    ? { bg: "bg-[#050505]", border: "border-white/10", glow1: "bg-violet-600 animate-pulse", glow2: "bg-fuchsia-600 animate-pulse", text: "from-violet-400 to-fuchsia-400", badge: "VIP BLACK" }
     : esOro 
-    ? { bg: "bg-gradient-to-br from-yellow-900 to-[#1a1300]", border: "border-yellow-500/30", glow1: "bg-yellow-500 group-hover:bg-orange-400", glow2: "bg-orange-500 group-hover:bg-yellow-400", text: "from-yellow-300 to-yellow-600", badge: "NIVEL ORO" }
-    : { bg: "bg-gradient-to-br from-slate-900 to-[#0a1128]", border: "border-blue-500/30", glow1: "bg-blue-500 group-hover:bg-cyan-400", glow2: "bg-cyan-500 group-hover:bg-blue-400", text: "from-blue-300 to-cyan-300", badge: "CLÁSICA" };
+    ? { bg: "bg-gradient-to-br from-yellow-900 to-[#1a1300]", border: "border-yellow-500/30", glow1: "bg-yellow-500 animate-pulse", glow2: "bg-orange-500 animate-pulse", text: "from-yellow-300 to-yellow-600", badge: "NIVEL ORO" }
+    : { bg: "bg-gradient-to-br from-slate-900 to-[#0a1128]", border: "border-blue-500/30", glow1: "bg-blue-500 animate-pulse", glow2: "bg-cyan-500 animate-pulse", text: "from-blue-300 to-cyan-300", badge: "CLÁSICA" };
 
   return (
     <main className={`min-h-screen pb-24 font-sans selection:bg-violet-500/30 transition-colors duration-500 overflow-x-hidden ${modoOscuro ? "bg-[#080A12] text-white" : "bg-[#F3F5F9] text-slate-900"}`}>
@@ -227,17 +218,20 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* TARJETA DIGITAL */}
+      {/* TARJETA DIGITAL (CON ANIMACIONES AMBIENTALES ACTIVAS PARA MÓVIL) */}
       <div className="max-w-md mx-auto px-6 relative z-20 perspective-1000 animate-slide-up">
-        <div className={`group relative transition-all duration-500 hover:-translate-y-2 hover:rotate-x-2 hover:shadow-2xl ${themeColors.bg} rounded-[3rem] p-8 overflow-hidden border ${themeColors.border}`}>
+        <div className={`relative transition-all duration-700 hover:shadow-2xl ${themeColors.bg} rounded-[3rem] p-8 overflow-hidden border ${themeColors.border} animate-[float_6s_ease-in-out_infinite]`}>
           
-          <div className="absolute inset-0 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_ease-in-out_infinite]"></div>
+          {/* HOLOGRAMA INFINITO */}
+          <div className="absolute inset-0 z-20 pointer-events-none opacity-40 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]"></div>
+          
           <div className="absolute inset-0 opacity-[0.03] text-white font-mono text-[7px] overflow-hidden rotate-12 scale-150">
              {Array(50).fill(`IMJU PLUS ${themeColors.badge} ESCUINAPA `).map((t,i) => <p key={i}>{t}</p>)}
           </div>
           
-          <div className={`absolute -top-24 -right-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-50 transition-colors duration-700 ${themeColors.glow1}`}></div>
-          <div className={`absolute -bottom-24 -left-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-50 transition-colors duration-700 ${themeColors.glow2}`}></div>
+          {/* LUCES VIVAS */}
+          <div className={`absolute -top-24 -right-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-60 transition-colors duration-700 ${themeColors.glow1}`}></div>
+          <div className={`absolute -bottom-24 -left-24 w-60 h-60 rounded-full mix-blend-screen filter blur-[70px] opacity-60 transition-colors duration-700 ${themeColors.glow2}`}></div>
 
           <div className="relative z-30 flex justify-between items-start mb-10">
             <div>
@@ -245,7 +239,7 @@ export default function TarjetaDigital() {
               <p className="text-white/50 text-[9px] font-mono mt-1.5 tracking-widest italic">{datosJoven.codigoUnicoQR}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5">
-               <span className="bg-white/10 backdrop-blur-lg border border-white/20 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest flex items-center gap-1.5">
+               <span className="bg-white/10 backdrop-blur-lg border border-white/20 text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                  {esBlack ? "👑" : esOro ? "⭐" : "🔹"} {themeColors.badge}
                </span>
                <div className="w-10 h-6 bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-400 rounded-md shadow-inner border border-white/30 flex flex-col justify-center gap-0.5 px-1 opacity-90">
@@ -271,7 +265,7 @@ export default function TarjetaDigital() {
                 </div>
               </div>
             </div>
-            <div className="cursor-pointer bg-white p-2 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-110 transition-transform flex-shrink-0" onClick={() => setQrAmpliado(true)}>
+            <div className="cursor-pointer bg-white p-2 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 transition-transform flex-shrink-0" onClick={() => setQrAmpliado(true)}>
               <QRCodeCanvas value={datosJoven.codigoUnicoQR} size={55} />
             </div>
           </div>
@@ -279,8 +273,9 @@ export default function TarjetaDigital() {
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes shimmer { 100% { transform: translateX(100%); } }
+        @keyframes shimmer { 0% { transform: translateX(-150%); } 100% { transform: translateX(150%); } }
         @keyframes spin-slow { 100% { transform: rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
       `}} />
 
       {/* BUSCADOR Y FILTROS */}
@@ -316,7 +311,6 @@ export default function TarjetaDigital() {
             </div>
         )}
 
-        {/* LISTA ORDENADA DE PROMOCIONES */}
         <div className="space-y-6 mt-2">
           {cargandoDatos ? (
             <div className="flex flex-col items-center py-20"><div className="w-9 h-9 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin"></div></div>
@@ -406,7 +400,6 @@ export default function TarjetaDigital() {
                   );
                 })}
 
-                {/* EMPLEOS Y ACTIVIDAD INTACTOS */}
                 {pestañaActiva === "empleos" && filtrados.map((e) => {
                    const yaContactado = empleosContactados.includes(e.idFirebase);
                    return (
@@ -453,22 +446,18 @@ export default function TarjetaDigital() {
         </div>
       </div>
 
-      {/* MODAL FESTEJO DE SUBIDA DE NIVEL */}
       {modalNivel && modalNivel.mostrar && (
         <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalNivel(null)}>
           <div className={`p-8 rounded-[3rem] shadow-[0_0_60px_rgba(255,215,0,0.3)] relative w-full max-w-sm text-center transform transition-all animate-slide-up bg-gradient-to-b ${modalNivel.nivelNuevo === "VIP Black" ? "from-slate-900 to-black border-2 border-fuchsia-500/50" : "from-yellow-50 to-white border-2 border-yellow-400"}`} onClick={e => e.stopPropagation()}>
-            
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-7xl animate-bounce">
               {modalNivel.nivelNuevo === "VIP Black" ? "👑" : "⭐"}
             </div>
-
             <h2 className={`text-3xl font-black mt-6 mb-2 tracking-tighter ${modalNivel.nivelNuevo === "VIP Black" ? "text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400" : "text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-700"}`}>
               ¡NUEVO ESTATUS!
             </h2>
             <p className={`text-sm font-bold mb-6 uppercase tracking-widest ${modalNivel.nivelNuevo === "VIP Black" ? "text-slate-400" : "text-slate-500"}`}>
               Has alcanzado el {modalNivel.nivelNuevo}
             </p>
-
             <div className={`p-5 rounded-2xl mb-6 ${modalNivel.nivelNuevo === "VIP Black" ? "bg-white/5 border border-white/10" : "bg-yellow-100/50 border border-yellow-200"}`}>
               <p className={`text-xs font-medium leading-relaxed ${modalNivel.nivelNuevo === "VIP Black" ? "text-slate-300" : "text-slate-600"}`}>
                 ¡Felicidades, {datosJoven.nombreCompleto.split(" ")[0]}! Con tus <span className="font-black text-lg">{modalNivel.visitas}</span> visitas acabas de evolucionar tu tarjeta. 
@@ -476,7 +465,6 @@ export default function TarjetaDigital() {
                 Ahora tienes acceso a <span className="font-black">beneficios exclusivos</span> que están bloqueados para otros usuarios.
               </p>
             </div>
-
             <button onClick={() => setModalNivel(null)} className={`w-full font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest transition-all shadow-lg hover:scale-105 ${modalNivel.nivelNuevo === "VIP Black" ? "bg-fuchsia-600 hover:bg-fuchsia-500 text-white" : "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"}`}>
               Reclamar mi Estatus
             </button>
@@ -484,14 +472,12 @@ export default function TarjetaDigital() {
         </div>
       )}
 
-      {/* MODALES INTACTOS (Ajustes y QR Ampliado) */}
       {modalAjustes && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-center p-6 animate-fade-in" onClick={() => setModalAjustes(false)}>
           <div className={`p-8 rounded-[3rem] shadow-2xl relative w-full max-w-sm ${modoOscuro ? "bg-[#161B2C] border border-white/10" : "bg-white"}`} onClick={e => e.stopPropagation()}>
             <button onClick={() => setModalAjustes(false)} className={`absolute top-6 right-6 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${modoOscuro ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-500"}`}>✕</button>
             <h3 className={`text-xl font-black mb-2 tracking-tight ${modoOscuro ? "text-white" : "text-slate-900"}`}>Ajustes de Perfil</h3>
             <p className={`text-xs font-medium mb-6 ${modoOscuro ? "text-slate-400" : "text-slate-500"}`}>Aquí puedes personalizar tu seguridad.</p>
-            
             <form onSubmit={actualizarContrasena} className="space-y-4">
               <div>
                 <label className={`block text-[10px] font-black uppercase tracking-widest mb-2 ${modoOscuro ? "text-violet-400" : "text-violet-600"}`}>Nueva Contraseña</label>
